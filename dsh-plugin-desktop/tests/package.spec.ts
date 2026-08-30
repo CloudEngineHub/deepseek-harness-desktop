@@ -208,6 +208,24 @@ describe('published package surface', () => {
     ))).toBe(false)
   })
 
+  it('retains the pre-alpha.2 settings helpers used by profile plugins', () => {
+    const patchPath = './patches/dsh-settings@0.1.2-alpha.2.patch'
+    expect(workspaceManifest.resolutions?.['@deepseek-ai/dsh-settings']).toContain(patchPath)
+    const patch = readFileSync(new URL(patchPath, workspaceRoot), 'utf8')
+    const installedSettings = readFileSync(new URL(
+      'node_modules/@deepseek-ai/dsh-settings/lib/index.js',
+      packageRoot,
+    ), 'utf8')
+    for (const marker of [
+      'function settingsNamespace(value)',
+      'function installSettingsSection(ctx, ns, schema, entry, hooks)',
+      'settingsCtx.settings.installSection(ctx, ns, schema, entry, hooks)',
+    ]) {
+      expect(patch).toContain(marker)
+      expect(installedSettings).toContain(marker)
+    }
+  })
+
   it('contains no stale rc.2 DSH runtime resolution', () => {
     const dshResolutions = Object.entries(workspaceManifest.resolutions ?? {})
       .filter(([selector]) => selector === '@deepseek-ai/dsh' || selector.startsWith('@deepseek-ai/dsh-'))
