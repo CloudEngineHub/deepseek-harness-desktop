@@ -1,5 +1,5 @@
 diff --git a/lib/client.js b/lib/client.js
-index 3bc9db718b..9406075df3 100644
+index 3bc9db718bef769a0cf70b0ae07e4feba14f4ebf..d932af7eecba7179bbd8a654238f4deeac8e767b 100644
 --- a/lib/client.js
 +++ b/lib/client.js
 @@ -280,7 +280,7 @@ window.__ModuleLoader__.load({
@@ -135,7 +135,7 @@ index 3bc9db718b..9406075df3 100644
  			});
  			ctx.slots.inject("conversation.hero.workspace.directoryFlow", () => ctx.slots.inject("sidebar.workspaces.directoryFlow", function* () {
 diff --git a/lib/types/client/DirectoryBrowser.d.ts b/lib/types/client/DirectoryBrowser.d.ts
-index 2992216e3c..8ff178a712 100644
+index 2992216e3cbba230f6e185d2ef0968f039cacca6..8ff178a712fe311e8ef39a39df52af50078e3cc8 100644
 --- a/lib/types/client/DirectoryBrowser.d.ts
 +++ b/lib/types/client/DirectoryBrowser.d.ts
 @@ -17,6 +17,10 @@ export interface DirectoryBrowserProps {
@@ -159,7 +159,7 @@ index 2992216e3c..8ff178a712 100644
 +export declare function DirectoryBrowser({ open, listDirectory, createDirectory, pickNativeDirectory, validateDirectory, onOpen, onClose, busy, t }: DirectoryBrowserProps): import("react").JSX.Element | null;
 +//# sourceMappingURL=DirectoryBrowser.d.ts.map
 diff --git a/lib/types/client/flow.d.ts b/lib/types/client/flow.d.ts
-index e4e84ac2e7..f4ee4792c5 100644
+index e4e84ac2e729186c4e2a98f5af6b38b74fc2cacd..f4ee4792c5a78da05081ead4919cb5cc0b13f0f8 100644
 --- a/lib/types/client/flow.d.ts
 +++ b/lib/types/client/flow.d.ts
 @@ -8,6 +8,10 @@ export interface BrowseFlowInjected {
