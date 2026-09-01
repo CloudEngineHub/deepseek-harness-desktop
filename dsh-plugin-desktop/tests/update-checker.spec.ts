@@ -106,8 +106,13 @@ describe('public Desktop version check', () => {
       [DESKTOP_CURRENT_VERSION_HEADER]: '2.9.9',
       [DESKTOP_INSTALLATION_ID_HEADER]: INSTALLATION_ID,
     })
+    expect(desktopVersionRequestHeaders(INSTALLATION_ID, '2.0.5-beta.1')).toEqual({
+      Accept: 'application/json',
+      [DESKTOP_CURRENT_VERSION_HEADER]: '2.0.5-beta.1',
+      [DESKTOP_INSTALLATION_ID_HEADER]: INSTALLATION_ID,
+    })
     expect(desktopVersionRequestHeaders()).toEqual({ Accept: 'application/json' })
-    expect(() => desktopVersionRequestHeaders(undefined, '2.9.0-rc.1')).toThrow('canonical stable SemVer')
+    expect(() => desktopVersionRequestHeaders(undefined, 'v2.9.0')).toThrow('canonical SemVer')
     expect(() => desktopVersionRequestHeaders('not-a-uuid')).toThrow('canonical lowercase UUID v4')
   })
 
@@ -141,6 +146,17 @@ describe('public Desktop version check', () => {
       currentVersion: '9007199254740992.0.0',
       request: async () => versionResponse('10000000000000000.0.0'),
     })).resolves.toMatchObject({ status: 'update-available' })
+  })
+
+  it('lets a Beta installation discover the corresponding stable release', async () => {
+    await expect(checkForStableUpdate({
+      currentVersion: '2.0.5-beta.1',
+      request: async () => versionResponse('2.0.5'),
+    })).resolves.toEqual({
+      status: 'update-available',
+      currentVersion: '2.0.5-beta.1',
+      latestVersion: '2.0.5',
+    })
   })
 
   it.each([
@@ -200,7 +216,7 @@ describe('public Desktop version check', () => {
     })).resolves.toBeNull()
   })
 
-  it.each(['2.0', 'v2.0.0', '2.0.0-rc.1'])('skips invalid installed version %s before requesting', async currentVersion => {
+  it.each(['2.0', 'v2.0.0', '2.0.0-01'])('skips invalid installed version %s before requesting', async currentVersion => {
     const request = vi.fn(async () => versionResponse('2.1.0'))
 
     await expect(checkForStableUpdate({ currentVersion, request })).resolves.toBeNull()

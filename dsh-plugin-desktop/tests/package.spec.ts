@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import {
   copyFileSync,
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -63,6 +62,11 @@ const workspaceManifest = JSON.parse(readFileSync(new URL('package.json', worksp
 const ciWorkflow = readFileSync(new URL('.github/workflows/ci.yml', workspaceRoot), 'utf8')
 
 describe('published package surface', () => {
+  it('uses the Beta product version across the workspace and Desktop package', () => {
+    expect(workspaceManifest.version).toBe('2.0.5-beta.1')
+    expect(manifest.version).toBe(workspaceManifest.version)
+  })
+
   it('runs desktop and community market typechecks from the root command', () => {
     expect(workspaceManifest.scripts?.typecheck)
       .toBe('yarn workspace dsh-plugin-desktop typecheck && yarn workspace dsh-community-market typecheck')
@@ -149,7 +153,7 @@ describe('published package surface', () => {
   it('pins both selectable Market providers in the published runtime', () => {
     expect(manifest.dependencies).toMatchObject({
       'dsh-community-market': '0.1.0-dev.0',
-      dshmarket: '1.17.1',
+      dshmarket: '1.38.1',
     })
     expect(manifest.optionalDependencies ?? {}).not.toHaveProperty('dshmarket')
   })
@@ -197,15 +201,23 @@ describe('published package surface', () => {
     }
   })
 
-  it('keeps the upstream settings client unpatched', () => {
-    const resolution = workspaceManifest.resolutions?.['@deepseek-ai/dsh-client-ui-settings-general']
-    expect(resolution).toBe(
-      'file:vendor/dsh-runtime/0.1.2-alpha.3/deepseek-ai-dsh-client-ui-settings-general-0.1.2-alpha.3.tgz',
-    )
-    expect(existsSync(new URL(
-      '../patches/dsh-client-ui-settings-general@0.1.2-alpha.3.patch',
+  it('gives the Desktop settings section a dedicated display icon', () => {
+    const patchPath = './patches/dsh-client-ui-settings-general@0.1.2-alpha.3.patch'
+    expect(workspaceManifest.resolutions?.['@deepseek-ai/dsh-client-ui-settings-general'])
+      .toContain(patchPath)
+    const patch = readFileSync(new URL(patchPath, workspaceRoot), 'utf8')
+    const installedClient = readFileSync(new URL(
+      'node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js',
       packageRoot,
-    ))).toBe(false)
+    ), 'utf8')
+    for (const marker of [
+      'function IconDesktopSettings',
+      'if (id === "desktop")',
+      'M5 14h6M8 11.5V14',
+    ]) {
+      expect(patch).toContain(marker)
+      expect(installedClient).toContain(marker)
+    }
   })
 
   it('retains the pre-alpha.2 settings helpers used by profile plugins', () => {

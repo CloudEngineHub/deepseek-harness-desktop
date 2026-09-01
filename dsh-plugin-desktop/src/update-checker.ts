@@ -36,7 +36,7 @@ export type UpdateRequest = (url: string, init: RequestInit) => Promise<Response
 
 /** Inputs for one stable version check. */
 export interface UpdateCheckOptions {
-  /** Installed application version, expressed as canonical stable SemVer. */
+  /** Installed application version, expressed as canonical SemVer. */
   readonly currentVersion: string
   /** Caller-owned cancellation signal; the checker does not create its own timeout. */
   readonly signal?: AbortSignal
@@ -50,7 +50,7 @@ export interface UpdateCheckOptions {
 export type UpdateCheckResult = {
   /** Whether the service reports a version newer than the installed application. */
   readonly status: 'up-to-date' | 'update-available'
-  /** Canonical installed stable version. */
+  /** Canonical installed version, including any prerelease identifiers. */
   readonly currentVersion: string
   /** Canonical latest stable version returned by the service. */
   readonly latestVersion: string
@@ -103,7 +103,7 @@ export function compareSemVerVersions(left: string, right: string): number | nul
 export async function checkForStableUpdate(
   options: UpdateCheckOptions,
 ): Promise<UpdateCheckResult | null> {
-  const current = parseCanonicalStableVersion(options.currentVersion)
+  const current = parseCanonicalVersion(options.currentVersion)
   if (current === null) return null
 
   let headers: HeadersInit
@@ -153,8 +153,8 @@ export function desktopVersionRequestHeaders(
 ): Readonly<Record<string, string>> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (currentVersion !== undefined) {
-    const parsed = parseCanonicalStableVersion(currentVersion)
-    if (parsed === null) throw new Error('Desktop current version must be a canonical stable SemVer.')
+    const parsed = parseCanonicalVersion(currentVersion)
+    if (parsed === null) throw new Error('Desktop current version must be canonical SemVer.')
     headers[DESKTOP_CURRENT_VERSION_HEADER] = parsed.version
   }
   if (installationId !== undefined) {
@@ -209,10 +209,13 @@ function parseVersionResponse(body: string): ParsedSemVer | null {
 }
 
 function parseCanonicalStableVersion(input: string): ParsedSemVer | null {
+  const parsed = parseCanonicalVersion(input)
+  return parsed !== null && parsed.prerelease.length === 0 ? parsed : null
+}
+
+function parseCanonicalVersion(input: string): ParsedSemVer | null {
   const parsed = parseSemVer(input)
-  return parsed !== null && parsed.prerelease.length === 0 && parsed.version === input
-    ? parsed
-    : null
+  return parsed !== null && parsed.version === input ? parsed : null
 }
 
 function compareParsedSemVer(left: ParsedSemVer, right: ParsedSemVer): number {
