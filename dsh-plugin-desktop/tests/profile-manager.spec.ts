@@ -107,11 +107,6 @@ describe('desktop profile discovery', () => {
       '@deepseek-ai/dsh-web-app',
       'dsh-plugin-desktop',
     ])
-    writeProfile(home, 'embedded-desktop-beta', [
-      '@deepseek-ai/dsh-base',
-      '@deepseek-ai/dsh-web-app',
-      'dsh-plugin-desktop-beta',
-    ])
     writeProfile(home, 'broken', 'not-an-array')
     mkdirSync(join(home, 'profiles', 'node_modules'), { recursive: true })
     const before = readFileSync(join(webDir, 'package.json'), 'utf8')
@@ -120,12 +115,6 @@ describe('desktop profile discovery', () => {
       expect.objectContaining({ name: 'broken', exists: true, webCapable: false, problem: expect.any(String) }),
       expect.objectContaining({
         name: 'embedded-desktop',
-        exists: true,
-        webCapable: false,
-        problem: expect.stringContaining('launcher-owned'),
-      }),
-      expect.objectContaining({
-        name: 'embedded-desktop-beta',
         exists: true,
         webCapable: false,
         problem: expect.stringContaining('launcher-owned'),
@@ -144,7 +133,6 @@ describe('desktop profile discovery', () => {
     expect(readdirSync(join(home, 'profiles')).sort()).toEqual([
       'broken',
       'embedded-desktop',
-      'embedded-desktop-beta',
       'headless',
       'node_modules',
       'work',
@@ -321,11 +309,6 @@ describe('desktop profile selection state', () => {
       '@deepseek-ai/dsh-web-app',
       'dsh-plugin-desktop',
     ])
-    writeProfile(home, 'embedded-desktop-beta', [
-      '@deepseek-ai/dsh-base',
-      '@deepseek-ai/dsh-web-app',
-      'dsh-plugin-desktop-beta',
-    ])
 
     expect(readDesktopProfileState(statePath)).toEqual({
       version: 2,
@@ -342,7 +325,6 @@ describe('desktop profile selection state', () => {
       'must directly include @deepseek-ai/dsh-base before @deepseek-ai/dsh-web-app',
     )
     expect(() => selectDesktopProfile(statePath, home, 'embedded-desktop')).toThrow('launcher-owned')
-    expect(() => selectDesktopProfile(statePath, home, 'embedded-desktop-beta')).toThrow('launcher-owned')
     expect(() => selectDesktopProfile(statePath, home, '../outside')).toThrow()
     if (process.platform !== 'win32') {
       expect(statSync(statePath).mode & 0o777).toBe(0o600)

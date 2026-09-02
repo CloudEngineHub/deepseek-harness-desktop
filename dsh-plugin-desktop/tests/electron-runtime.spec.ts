@@ -1,4 +1,4 @@
-import { readFileSync, unlinkSync } from 'node:fs'
+import { unlinkSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DesktopShellSpec } from '../src/runtime.ts'
@@ -40,9 +40,6 @@ const childProcess = vi.hoisted(() => {
 })
 
 const MAIN_WINDOW_STATE_PATH = '/tmp/dsh-desktop-user-data/main-window-state.json'
-const PRODUCT_VERSION = (JSON.parse(
-  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
-) as { readonly version: string }).version
 
 function clearMainWindowState(): void {
   try {
@@ -1576,7 +1573,7 @@ describe('Electron desktop runtime', () => {
         appExecutable: process.execPath,
         electronVersion: '43.4.0',
         profileName: 'desktop',
-        productVersion: PRODUCT_VERSION,
+        productVersion: '2.0.4',
         profileDir: expect.stringMatching(/profiles[\\/]+desktop$/u),
         homeDir: expect.stringContaining('dsh-desktop-user-data'),
         spawn: expect.any(Function),
@@ -1612,7 +1609,7 @@ describe('Electron desktop runtime', () => {
     expect(diagnostics.export).toHaveBeenCalledWith(
       expect.stringContaining('dsh-desktop-user-data'),
       expect.objectContaining({
-        appVersion: PRODUCT_VERSION,
+        appVersion: '2.0.4',
         crashDumpsDir: expect.stringMatching(/[\\/]Crashpad$/u),
       }),
     )
@@ -1882,7 +1879,7 @@ describe('Electron desktop runtime', () => {
     expect(runtime.updates).toMatchObject({
       isPackaged: false,
       canDownload: false,
-      currentVersion: PRODUCT_VERSION,
+      currentVersion: '2.0.4',
       statePath: join('/tmp/dsh-desktop-user-data', 'updates', 'state.json'),
     })
     electron.app.isPackaged = true

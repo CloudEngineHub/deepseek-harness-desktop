@@ -312,7 +312,7 @@ try {
   const graph = JSON.parse(bootMatch[1])
   const ids = new Set(graph.entries.map(entry => entry.id))
   for (const id of [
-    'dsh-plugin-desktop-beta',
+    'dsh-plugin-desktop',
     '@deepseek-ai/dsh-client-ui-conversation',
     '@deepseek-ai/dsh-client-ui-sidebar',
     '@deepseek-ai/dsh-client-ui-directory-picker-browse',

@@ -32,17 +32,16 @@ describe('desktop npm launcher', () => {
   })
 
   it('names the installed product and selected profile behavior', () => {
-    expect(DESKTOP_CLI_HELP).toContain('DSH Desktop Beta')
-    expect(DESKTOP_CLI_HELP).toContain('Usage: dsh-plugin-desktop-beta')
+    expect(DESKTOP_CLI_HELP).toContain('DSH Desktop')
     expect(DESKTOP_CLI_HELP).toContain('selected Web-capable profile')
     expect(DESKTOP_CLI_HELP).toContain('--export-diagnostics')
   })
 
   it('resolves the packaged Desktop user-data directory without Electron', () => {
     expect(defaultDesktopUserDataDirectory('win32', { APPDATA: 'C:\\Users\\Example\\AppData\\Roaming' }, 'ignored'))
-      .toBe('C:\\Users\\Example\\AppData\\Roaming\\DSH Desktop Beta')
+      .toBe('C:\\Users\\Example\\AppData\\Roaming\\DSH Desktop')
     expect(defaultDesktopUserDataDirectory('darwin', {}, '/Users/example'))
-      .toBe('/Users/example/Library/Application Support/DSH Desktop Beta')
+      .toBe('/Users/example/Library/Application Support/DSH Desktop')
   })
 
   it('exports diagnostics without launching Electron', async () => {
@@ -64,7 +63,7 @@ describe('desktop npm launcher', () => {
       const code = await runDesktopCli([])
       expect(code).toBe(1)
       expect(write).toHaveBeenCalledWith(expect.stringContaining('electron is not available'))
-      expect(write).toHaveBeenCalledWith(expect.stringContaining('npm install -g dsh-plugin-desktop-beta'))
+      expect(write).toHaveBeenCalledWith(expect.stringContaining('npm install -g dsh-plugin-desktop'))
     } finally {
       write.mockRestore()
     }

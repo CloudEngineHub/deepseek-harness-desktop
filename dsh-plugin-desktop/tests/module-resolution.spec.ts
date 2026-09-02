@@ -74,7 +74,7 @@ describe('installProfilePackageResolver', () => {
   it('uses the overlay-selected side for every Loader package and subpath', () => {
     const profileBaseUrl = 'file:///C:/Users/test/profile/package.json'
     harness.sources.set('@deepseek-ai/dsh-web-app', 'install')
-    harness.sources.set('dsh-plugin-desktop-beta', 'profile')
+    harness.sources.set('dsh-plugin-desktop', 'profile')
     installProfilePackageResolver(profileBaseUrl)
     const nextResolve = vi.fn((specifier: string, context: { parentURL?: string }) => ({ specifier, context }))
     const loaderEntryUrl = import.meta.resolve('@deepseek-ai/cordis-plugin-loader')
@@ -88,15 +88,15 @@ describe('installProfilePackageResolver', () => {
     expect(installed.context.parentURL).toMatch(/\/lib\/index\.js$/u)
 
     expect(harness.resolve?.(
-      'dsh-plugin-desktop-beta/profile',
+      'dsh-plugin-desktop/profile',
       { parentURL: loaderEntryUrl },
       nextResolve,
     )).toEqual({
-      specifier: 'dsh-plugin-desktop-beta/profile',
+      specifier: 'dsh-plugin-desktop/profile',
       context: { parentURL: profileBaseUrl },
     })
     expect(harness.overlay).toHaveBeenCalledWith('@deepseek-ai/dsh-web-app', expect.any(Object))
-    expect(harness.overlay).toHaveBeenCalledWith('dsh-plugin-desktop-beta', expect.any(Object))
+    expect(harness.overlay).toHaveBeenCalledWith('dsh-plugin-desktop', expect.any(Object))
   })
 
   it('also recognizes the Loader native dynamic-import fallback', () => {

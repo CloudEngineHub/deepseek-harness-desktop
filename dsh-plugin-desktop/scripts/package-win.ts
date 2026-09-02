@@ -135,7 +135,7 @@ export function packageWindowsArtifact(
         '/d',
         '/s',
         '/c',
-        'corepack yarn workspace dsh-plugin-desktop-beta check:win-package',
+        'corepack yarn workspace dsh-plugin-desktop check:win-package',
       ],
       options.workspaceRoot,
       cleanEnvironment,

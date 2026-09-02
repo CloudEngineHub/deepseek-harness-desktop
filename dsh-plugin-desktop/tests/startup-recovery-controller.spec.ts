@@ -24,13 +24,7 @@ function writeManifest(root: string): string {
   writeFileSync(path, `${JSON.stringify({
     name: 'dsh-profile-desktop',
     dependencies: { 'direct-plugin': '1.0.0' },
-    dsh: { profile: { bundles: [
-      '@deepseek-ai/dsh-base',
-      'dsh-plugin-desktop-beta',
-      'dsh-plugin-desktop',
-      'direct-plugin',
-      'detached-bundle',
-    ] } },
+    dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', 'dsh-plugin-desktop', 'direct-plugin', 'detached-bundle'] } },
   }, undefined, 2)}\n`)
   return path
 }
@@ -121,7 +115,6 @@ describe('pre-Host Desktop startup recovery controller', () => {
     expect(snapshot.bundles.find(item => item.packageName === 'direct-plugin')).toMatchObject({ owner: 'profile', action: 'uninstall' })
     expect(snapshot.bundles.find(item => item.packageName === 'detached-bundle')).toMatchObject({ owner: 'external', action: null })
     expect(snapshot.bundles.find(item => item.packageName === 'dsh-plugin-desktop')).toMatchObject({ owner: 'core', action: null })
-    expect(snapshot.bundles.find(item => item.packageName === 'dsh-plugin-desktop-beta')).toMatchObject({ owner: 'core', action: null })
     expect(snapshot.checkpoints).toEqual([
       { slotId: 'slot-1', status: 'available', capturedAt: '2026-08-21T00:00:00.000Z', appVersion: '2.0.3', provider: 'desktop-profile', fileCount: 1, pluginCount: 3, totalBytes: 20 },
       { slotId: 'slot-2', status: 'available', capturedAt: '2026-08-22T00:00:00.000Z', appVersion: '2.0.3', provider: 'desktop-profile', fileCount: 1, pluginCount: 4, totalBytes: 20 },
@@ -149,7 +142,7 @@ describe('pre-Host Desktop startup recovery controller', () => {
     const root = temporaryRoot()
     const target = createHarness(root)
     const snapshot = await target.controller.snapshot()
-    for (const packageName of ['dsh-plugin-desktop', 'dsh-plugin-desktop-beta', 'detached-bundle']) {
+    for (const packageName of ['dsh-plugin-desktop', 'detached-bundle']) {
       const bundle = snapshot.bundles.find(item => item.packageName === packageName)!
       await expect(target.controller.previewUninstall(bundle.bundleId)).rejects.toSatisfy(
         cause => errorCode(cause) === 'immutable-target',

@@ -8,7 +8,6 @@ import {
   auxiliaryWindowHasCustomFrame,
 } from './auxiliary-window-options.ts'
 import { revealApplication } from './electron-reveal.ts'
-import { DESKTOP_PRODUCT_NAME } from './product-identity.ts'
 
 const DIALOG_SCHEME = 'dsh-desktop-dialog:'
 const DIALOG_DOCUMENT = fileURLToPath(new URL('./native-ui/desktop-dialog.html', import.meta.url))
@@ -222,7 +221,7 @@ export async function showDesktopMessageBox(
 ): Promise<MessageBoxReturnValue> {
   const result = await showDesktopDialog({
     type: options.type ?? 'none',
-    title: options.title ?? DESKTOP_PRODUCT_NAME,
+    title: options.title ?? 'DSH Desktop',
     message: options.message,
     ...(options.detail === undefined ? {} : { detail: options.detail }),
     buttons: options.buttons ?? ['OK'],

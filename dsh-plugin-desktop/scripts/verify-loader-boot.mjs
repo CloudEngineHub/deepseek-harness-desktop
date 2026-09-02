@@ -118,11 +118,11 @@ try {
   releasePackageResolver = installProfilePackageResolver(prepared.bareModuleBaseUrl)
   const profileRequire = createRequire(prepared.bareModuleBaseUrl)
   const desktopManifest = fileURLToPath(new URL('../package.json', import.meta.url))
-  if (profileRequire.resolve('dsh-plugin-desktop-beta/package.json') !== desktopManifest) {
+  if (profileRequire.resolve('dsh-plugin-desktop/package.json') !== desktopManifest) {
     throw new Error('desktop package manifest did not resolve from the installed launcher')
   }
   const profileDirectoryRequire = createRequire(new URL('.', prepared.bareModuleBaseUrl))
-  if (profileDirectoryRequire.resolve('dsh-plugin-desktop-beta/package.json') !== desktopManifest) {
+  if (profileDirectoryRequire.resolve('dsh-plugin-desktop/package.json') !== desktopManifest) {
     throw new Error('desktop package manifest did not resolve from the profile directory')
   }
 
@@ -146,7 +146,7 @@ try {
     BIN_NAME,
     prepared.rootConfig,
     [{ insert: [
-      { id: 'desktop-shell', name: 'dsh-plugin-desktop-beta' },
+      { id: 'desktop-shell', name: 'dsh-plugin-desktop' },
       { id: 'community-market', name: 'dsh-community-market' },
       { id: 'third-party-smoke', name: THIRD_PARTY_NAME },
     ] }],
@@ -192,7 +192,7 @@ try {
   const desktopEntry = ctx.loader.resolve('include:desktop-shell')
   const marketEntry = ctx.loader.resolve('include:community-market')
   const thirdPartyEntry = ctx.loader.resolve('include:third-party-smoke')
-  if (desktopEntry?.options.name !== 'dsh-plugin-desktop-beta') {
+  if (desktopEntry?.options.name !== 'dsh-plugin-desktop') {
     throw new Error('launcher-owned desktop plugin did not activate through its bare package name')
   }
   if (thirdPartyEntry?.options.name !== THIRD_PARTY_NAME) {

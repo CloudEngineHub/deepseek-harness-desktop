@@ -15,6 +15,7 @@ import {
   THEME_SETTINGS_NAMESPACE,
   type ThemeSettings,
 } from '@deepseek-ai/dsh-client-ui-theme'
+import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import {
   handleRendererBootRequest,
   RENDERER_BOOT_REPORT_PATH,
@@ -78,7 +79,6 @@ import {
   type PersistedWindowsWindowMaterial,
   windowsSupportsMica,
 } from './window-material.ts'
-import { DESKTOP_PRODUCT_NAME } from './product-identity.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'desktop-shell'
@@ -88,10 +88,10 @@ export const name = 'desktop-shell'
 export const inject = ['webServer', 'webRuntime', 'appExit', 'settings', 'connection']
 
 /** Standard settings namespace shared by tray and configuration surfaces. */
-export const DESKTOP_SETTINGS_NAMESPACE = 'dsh-desktop'
+export const DESKTOP_SETTINGS_NAMESPACE = settingsNamespace('dsh-desktop')
 
-const UI_THEME_SETTINGS_NAMESPACE = THEME_SETTINGS_NAMESPACE
-const UI_LOCALE_SETTINGS_NAMESPACE = LOCALE_SETTINGS_NAMESPACE
+const UI_THEME_SETTINGS_NAMESPACE = settingsNamespace(THEME_SETTINGS_NAMESPACE)
+const UI_LOCALE_SETTINGS_NAMESPACE = settingsNamespace(LOCALE_SETTINGS_NAMESPACE)
 
 /** Apply the official Connection trust and browser-auth fence before a private Desktop route. */
 function rejectDesktopRequest(
@@ -474,7 +474,7 @@ export function apply(ctx: Context, config: Config): void {
         url,
         authenticationUrl: ctx.connection.authenticatedUrl(new URL(url).origin),
         rendererAccessHeader: browserAccess.rendererHeader,
-        productName: DESKTOP_PRODUCT_NAME,
+        productName: 'DSH Desktop',
         windowTitle: 'DeepSeek Harness Desktop',
         iconPath,
         trayIcons,

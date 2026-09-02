@@ -28,7 +28,6 @@ export interface DesktopSetupWizardSelection {
 
 /** Fixed capabilities and current values supplied before the Host is started. */
 export interface DesktopSetupWizardInput extends DesktopSetupWizardSelection {
-  readonly appVersion: string
   readonly profileName: string
   readonly platform: DesktopSetupWizardPlatform
   readonly micaSupported: boolean
@@ -48,13 +47,7 @@ const SELECTION_KEYS = Object.freeze([
   'market',
   'notifications',
 ] as const)
-const INPUT_KEYS = Object.freeze([
-  ...SELECTION_KEYS,
-  'appVersion',
-  'profileName',
-  'platform',
-  'micaSupported',
-] as const)
+const INPUT_KEYS = Object.freeze([...SELECTION_KEYS, 'profileName', 'platform', 'micaSupported'] as const)
 const NOTIFICATION_KEYS = Object.freeze([
   'enabled',
   'notifyOnTurnCompletion',
@@ -128,11 +121,7 @@ export function isDesktopSetupWizardInput(value: unknown): value is DesktopSetup
   if (!isObject(value) || !hasExactKeys(value, INPUT_KEYS) || !hasSelectionValues(value)) {
     return false
   }
-  return typeof value.appVersion === 'string'
-    && value.appVersion.length > 0
-    && value.appVersion.length <= 128
-    && /^[0-9A-Za-z.+-]+$/u.test(value.appVersion)
-    && typeof value.profileName === 'string'
+  return typeof value.profileName === 'string'
     && value.profileName.length > 0
     && new TextEncoder().encode(value.profileName).byteLength <= 255
     && !value.profileName.includes('/')

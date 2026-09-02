@@ -50,7 +50,7 @@ Import the Client contract from the supported client export and inject `desktopW
 
 ```ts
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import type { DesktopWindowService } from 'dsh-plugin-desktop-beta/client'
+import type { DesktopWindowService } from 'dsh-plugin-desktop/client'
 
 export const inject = ['desktopWindow']
 
@@ -104,15 +104,15 @@ Use type-only imports from the supported contract paths:
 import type {
   DesktopCurrentProfile,
   DesktopProfiles,
-} from 'dsh-plugin-desktop-beta/profile-service'
+} from 'dsh-plugin-desktop/profile-service'
 import type {
   DesktopPnpm,
   DesktopPnpmHandle,
   DesktopPnpmOutcome,
-} from 'dsh-plugin-desktop-beta/pnpm'
+} from 'dsh-plugin-desktop/pnpm'
 ```
 
-`dsh-plugin-desktop-beta/profiles` is the Desktop-owned tray consumer, not the profile service contract. Do not import it for service types.
+`dsh-plugin-desktop/profiles` is the Desktop-owned tray consumer, not the profile service contract. Do not import it for service types.
 
 ### `desktopProfiles`
 
@@ -183,9 +183,9 @@ Invalid argv, a closed or busy generation, and a signal that was already aborted
 
 | Name | Boundary | Plugin-author status |
 | --- | --- | --- |
-| `desktopProfiles` | Generation-scoped Host service. | Public and supported through `dsh-plugin-desktop-beta/profile-service`. |
-| `desktopPnpm` | Generation-scoped Host service. | Public and supported through `dsh-plugin-desktop-beta/pnpm`. |
-| `desktopWindow` | Generation-scoped Client service. | Public and supported through `dsh-plugin-desktop-beta/client`; immutable geometry only. |
+| `desktopProfiles` | Generation-scoped Host service. | Public and supported through `dsh-plugin-desktop/profile-service`. |
+| `desktopPnpm` | Generation-scoped Host service. | Public and supported through `dsh-plugin-desktop/pnpm`. |
+| `desktopWindow` | Generation-scoped Client service. | Public and supported through `dsh-plugin-desktop/client`; immutable geometry only. |
 | `desktopRuntime` | Launcher-provided native adapter used by Desktop-owned shell, tray, terminal, profile, and update rows. | Desktop-internal. Third-party plugins must not inject it or rely on its window/tray methods. |
 | `desktopPnpmBootstrap` | Absolute packaged paths, selected profile facts, Electron ABI values, and private Node helpers supplied to the `desktop-pnpm` provider. | Launcher-private. Never read, provide, intercept, or declare it as a dependency. |
 | `DesktopProfileServiceBootstrap` | Constructor input used while the launcher registers `desktopProfiles`; it is not a Cordis service. | Launcher-private implementation detail. |
@@ -200,8 +200,8 @@ A plugin that only makes sense inside DSH Desktop can declare both services as r
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from 'dsh-plugin-desktop-beta/profile-service'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
+import type {} from 'dsh-plugin-desktop/profile-service'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
 
 export const name = 'example-desktop-plugin-manager'
 export const inject = ['desktopProfiles', 'desktopPnpm']
@@ -249,8 +249,8 @@ Do not put Desktop services in the top-level required `inject` list when the sam
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from 'dsh-plugin-desktop-beta/profile-service'
-import type {} from 'dsh-plugin-desktop-beta/pnpm'
+import type {} from 'dsh-plugin-desktop/profile-service'
+import type {} from 'dsh-plugin-desktop/pnpm'
 
 export const name = 'cross-environment-plugin-manager'
 export const inject = ['webServer', 'loader']
@@ -293,7 +293,7 @@ export function apply(ctx: Context, config: { profile?: string }): void {
 
 Never fall back to a guessed `web` profile after `desktopProfiles` is present. A partial or failed Desktop provider set is a Desktop generation failure, not permission to mutate another profile through an ambient CLI. Also do not use `ctx.baseUrl`, settings, Loader inventory, or the launcher's inner `cmdlineArgs` as a substitute for `desktopProfiles.current`.
 
-Type-only imports are erased from JavaScript. A cross-environment package can keep `dsh-plugin-desktop-beta` as a development dependency for compilation, or as an optional peer if it publishes declarations that expose these types; it does not need a runtime import merely to probe the services.
+Type-only imports are erased from JavaScript. A cross-environment package can keep `dsh-plugin-desktop` as a development dependency for compilation, or as an optional peer if it publishes declarations that expose these types; it does not need a runtime import merely to probe the services.
 
 ## Minimal runnable test plugin
 
@@ -302,8 +302,8 @@ The repository includes a two-file profile-local fixture at [`tests/fixtures/des
 The complete Profile Loader smoke copies that package into a temporary profile's `node_modules`, loads it as a normal bare-package Loader entry, and fails unless the probe reports the active profile and `run()`. Run it with:
 
 ```sh
-yarn workspace dsh-plugin-desktop-beta build
-yarn workspace dsh-plugin-desktop-beta verify:profile
+yarn workspace dsh-plugin-desktop build
+yarn workspace dsh-plugin-desktop verify:profile
 ```
 
 This fixture is under `tests/`, is absent from the npm `files` list and Electron build files, and never enters a production archive.
@@ -327,4 +327,4 @@ The bundled `dshmarket` runtime consumes `runPlugin()` for ordinary plugin comma
 
 ## Stability boundary
 
-The supported plugin-author surface is the `desktopProfiles`, `desktopPnpm`, and `desktopWindow` service contract described here and exported by `dsh-plugin-desktop-beta/profile-service`, `dsh-plugin-desktop-beta/pnpm`, and `dsh-plugin-desktop-beta/client`. Launcher bootstrap values, native adapters, generated shims, state-file formats, Loader row ordering, and Electron implementation details may change without becoming third-party APIs. Keep fallbacks explicit, lifecycle-scoped, and headless-safe.
+The supported plugin-author surface is the `desktopProfiles`, `desktopPnpm`, and `desktopWindow` service contract described here and exported by `dsh-plugin-desktop/profile-service`, `dsh-plugin-desktop/pnpm`, and `dsh-plugin-desktop/client`. Launcher bootstrap values, native adapters, generated shims, state-file formats, Loader row ordering, and Electron implementation details may change without becoming third-party APIs. Keep fallbacks explicit, lifecycle-scoped, and headless-safe.

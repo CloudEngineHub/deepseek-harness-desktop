@@ -636,7 +636,7 @@ function windowsLaunchBroker(
   return [
     '@echo off',
     'setlocal EnableDelayedExpansion',
-    `start "DSH Desktop Beta" /D "!${WINDOWS_PROFILE_DIRECTORY}!" ${target}`,
+    `start "DSH Desktop" /D "!${WINDOWS_PROFILE_DIRECTORY}!" ${target}`,
     'exit /b %errorlevel%',
     '',
   ].join('\r\n')
