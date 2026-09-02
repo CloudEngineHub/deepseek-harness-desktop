@@ -94,10 +94,12 @@ describe('published package surface', () => {
   })
 
   it('sets a distinct Beta process identity before taking the single-instance lock', () => {
-    expect(productIdentity).toContain("DESKTOP_PACKAGE_NAME = 'dsh-plugin-desktop-beta'")
-    expect(productIdentity).toContain("STABLE_DESKTOP_PACKAGE_NAME = 'dsh-plugin-desktop'")
-    expect(productIdentity).toContain("DESKTOP_PRODUCT_NAME = 'DSH Desktop Beta'")
-    expect(productIdentity).toContain("DESKTOP_APP_ID = 'ai.deepseek.dsh.desktop.beta'")
+    expect(productIdentity).toContain("packageName: 'dsh-plugin-desktop-beta'")
+    expect(productIdentity).toContain("packageName: 'dsh-plugin-desktop'")
+    expect(productIdentity).toContain("productName: 'DSH Desktop Beta'")
+    expect(productIdentity).toContain("appId: 'ai.deepseek.dsh.desktop.beta'")
+    expect(productIdentity).toContain('DESKTOP_PRODUCT_IDENTITY = DESKTOP_RELEASE_IDENTITIES.beta')
+    expect(productIdentity).toContain('OTHER_DESKTOP_PRODUCT_IDENTITY = DESKTOP_RELEASE_IDENTITIES.stable')
     expect(main).toContain('app.setAppUserModelId(DESKTOP_APP_ID)')
     const setName = main.indexOf('app.setName(PRODUCT_NAME)')
     const start = main.indexOf('await start()', setName)
@@ -450,7 +452,7 @@ describe('published package surface', () => {
     const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
     const profileImport = main.indexOf('createDesktopWebProfile,')
     const profileService = main.indexOf('await hostCtx.plugin(DesktopProfileService, {')
-    const create = main.indexOf('create: name => createDesktopWebProfile(homeDir, name),', profileService)
+    const create = main.indexOf('create: name => createFreshDesktopProfile(name),', profileService)
     const list = main.indexOf('list: () => listDesktopProfiles(homeDir),', profileService)
     const persist = main.indexOf('persistSelection: name => { selectDesktopProfile(selectionStatePath, homeDir, name) },', profileService)
     const restart = main.indexOf('requestRestart: () => runtime.requestRestart(),', profileService)
@@ -485,6 +487,8 @@ describe('published package surface', () => {
   it('creates unified Profile checkpoints before composition and records only after health', () => {
     const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
     const beginProfile = main.indexOf('const profileStartup = beginDesktopProfileStartup(')
+    const admissionGuard = main.indexOf('if (!recoveryModeRequested)', beginProfile)
+    const admission = main.indexOf('inspectDesktopProfileChannelAdmission(', admissionGuard)
     const checkpoint = main.indexOf('profileCheckpoint = new DesktopProfileCheckpoint({', beginProfile)
     const recoveryController = main.indexOf('startupRecoveryController = new DesktopStartupRecoveryController({', checkpoint)
     const prepare = main.indexOf('let prepared = prepareDesktopProfile(')
@@ -495,7 +499,9 @@ describe('published package surface', () => {
     const mount = main.indexOf('runtime.mountScheduled(),', awaitRenderer)
 
     expect(beginProfile).toBeGreaterThanOrEqual(0)
-    expect(checkpoint).toBeGreaterThan(beginProfile)
+    expect(admissionGuard).toBeGreaterThan(beginProfile)
+    expect(admission).toBeGreaterThan(admissionGuard)
+    expect(checkpoint).toBeGreaterThan(admission)
     expect(recoveryController).toBeGreaterThan(checkpoint)
     expect(prepare).toBeGreaterThan(recoveryController)
     expect(monitor).toBeGreaterThan(prepare)
@@ -506,6 +512,9 @@ describe('published package surface', () => {
     expect(main).not.toContain('DesktopStartupStateCommit')
     expect(main).not.toContain('DesktopInstallRecoveryStore')
     expect(main).not.toContain('lastKnownGood')
+    expect(main).toContain('desktopPackageName: DESKTOP_PACKAGE_NAME')
+    expect(main).toContain('releaseChannel: DESKTOP_RELEASE_CHANNEL')
+    expect(main).toContain('dshVersion: currentDshVersion')
   })
 
   it('finishes or skips per-Profile native setup before Host boot and the main window', () => {
@@ -544,7 +553,7 @@ describe('published package surface', () => {
     expect(main).toContain("setupResult.action === 'quit'")
     expect(main).toContain("setupResult.action === 'skip'")
     expect(main).toContain("'skipped',")
-    expect(main).toContain('clearDesktopSetupWizardState(marketUserDataDir, profileDir)')
+    expect(main).toContain('clearDesktopProfileUsageHistory(releaseUserDataLocations, profileDir)')
   })
 
   it('keeps active Profile preferences as the lazy source and serializes runtime mirrors', () => {

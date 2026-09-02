@@ -110,9 +110,8 @@ import {
   prepareDesktopProfile,
   type SkippedOptionalEntry,
 } from './profile.ts'
-import { clearDesktopProfileCheckpoint, DesktopProfileCheckpoint } from './profile-checkpoint.ts'
+import { DesktopProfileCheckpoint } from './profile-checkpoint.ts'
 import {
-  clearDesktopSetupWizardState,
   completeOrSkipDesktopSetupWizard,
   desktopSetupWizardRequired,
   desktopSetupWizardStateConstants,
@@ -127,6 +126,13 @@ import {
 } from './setup-wizard-settings.ts'
 import type { DesktopSetupWizardResult } from './setup-wizard-contract.ts'
 import { DesktopSetupWizardWindow } from './setup-wizard-window.ts'
+import { ProfileCreateWindow } from './profile-create-window.ts'
+import { showDesktopMessageBox } from './desktop-dialog-window.ts'
+import {
+  clearDesktopProfileUsageHistory,
+  desktopReleaseUserDataLocations,
+  inspectDesktopProfileChannelAdmission,
+} from './profile-channel-admission.ts'
 import {
   formatProfileMaterializationFailure,
   materializeProfile,
@@ -165,9 +171,15 @@ import {
   type SessionProjectionCacheRecoveryResult,
 } from './session-projcache-recovery.ts'
 import { windowsSupportsMica } from './window-material.ts'
+import {
+  DESKTOP_APP_ID,
+  DESKTOP_PACKAGE_NAME,
+  DESKTOP_PRODUCT_NAME,
+  DESKTOP_RELEASE_CHANNEL,
+} from './product-identity.ts'
 
-const BIN_NAME = 'dsh-plugin-desktop'
-const PRODUCT_NAME = 'DSH Desktop'
+const BIN_NAME = DESKTOP_PACKAGE_NAME
+const PRODUCT_NAME = DESKTOP_PRODUCT_NAME
 
 /** Require OS-backed secret storage; Linux's plaintext fallback is not sufficient for a CA key. */
 function desktopLanHttpsPrivateKeyProtector(): DesktopLanHttpsPrivateKeyProtector {
@@ -344,6 +356,7 @@ async function start(): Promise<void> {
   let startupRecoveryController: DesktopStartupRecoveryController | undefined
   let startupRecoveryWindow: DesktopStartupRecoveryWindow | undefined
   let setupWizardWindow: DesktopSetupWizardWindow | undefined
+  let profileCompatibilityCreateWindow: ProfileCreateWindow | undefined
   let startupRecoveryConfigurationPaths: DesktopStartupRecoveryConfigurationPaths | undefined
   let profileCheckpoint: DesktopProfileCheckpoint | undefined
   let startupRecoveryProfileActions: DesktopStartupRecoveryProfileActions | undefined
@@ -354,9 +367,10 @@ async function start(): Promise<void> {
   let recoveryTerminalAvailable = false
   let startupStage: DesktopStartupFailureStage = 'electron-ready'
   const appVersion = desktopProductVersion()
+  const currentDshVersion = dshProductVersion()
   const setupWizardVersions = Object.freeze({
     desktopVersion: appVersion,
-    dshVersion: dshProductVersion(),
+    dshVersion: currentDshVersion,
     setupRevision: desktopSetupWizardStateConstants.setupRevision,
   })
   const recoveryModeRequested = desktopRecoveryModeRequested()
@@ -507,6 +521,10 @@ async function start(): Promise<void> {
   }
 
   const showPreHostSurface = (): boolean => {
+    if (profileCompatibilityCreateWindow !== undefined) {
+      profileCompatibilityCreateWindow.open()
+      return true
+    }
     if (setupWizardWindow !== undefined) {
       setupWizardWindow.show()
       return true
@@ -530,7 +548,7 @@ async function start(): Promise<void> {
     await app.whenReady()
     startupStage = 'shell-environment'
     lifecycleRecorder.transitionStartupStage(startupStage)
-    if (process.platform === 'win32') app.setAppUserModelId('ai.deepseek.dsh.desktop')
+    if (process.platform === 'win32') app.setAppUserModelId(DESKTOP_APP_ID)
     if (app.isPackaged && process.cwd() === '/') process.chdir(app.getPath('home'))
     const shellEnvironmentResolution = await resolveDesktopShellEnvironment({
       environment: process.env,
@@ -583,11 +601,27 @@ async function start(): Promise<void> {
     const releasePnpmRuntime = generation.own(() => { pnpmRuntime.dispose() })
     const selectionStatePath = join(app.getPath('userData'), 'profile-selection', 'state.json')
     const pluginManagementStatePath = join(app.getPath('userData'), 'plugin-management', 'state.json')
+    const marketUserDataDir = app.getPath('userData')
+    const releaseUserDataLocations = desktopReleaseUserDataLocations(
+      app.getPath('appData'),
+      marketUserDataDir,
+    )
+    const createFreshDesktopProfile = (name: string) => {
+      const created = createDesktopWebProfile(homeDir, name)
+      clearDesktopProfileUsageHistory(releaseUserDataLocations, created.dir)
+      return created
+    }
     startupStage = 'profile-selection'
     lifecycleRecorder.transitionStartupStage(startupStage)
+    const profileDirectoriesBeforeStartup = new Set(
+      listDesktopProfiles(homeDir).map(profile => profile.dir),
+    )
     const profileStartup = beginDesktopProfileStartup(selectionStatePath, homeDir)
     const activeProfileName = profileStartup.profileName
     const activeProfileDir = resolveProfileDir(activeProfileName, homeDir)
+    if (!profileDirectoriesBeforeStartup.has(activeProfileDir)) {
+      clearDesktopProfileUsageHistory(releaseUserDataLocations, activeProfileDir)
+    }
     // Recovery can open before Profile composition and Host boot. Fix the
     // launcher-owned terminal identity as soon as Profile selection succeeds
     // so every recovery entry path exposes the same terminal action.
@@ -625,11 +659,76 @@ async function start(): Promise<void> {
             assertDesktopProfileName(name)
             const selection = readDesktopProfileState(selectionStatePath)
             if (selection.active !== activeProfileName) throw new Error(`${BIN_NAME}: active Profile changed before recovery`)
-            createDesktopWebProfile(homeDir, name)
+            createFreshDesktopProfile(name)
             selectDesktopProfile(selectionStatePath, homeDir, name)
           },
         })
       },
+    }
+    if (!recoveryModeRequested) {
+      const locale = desktopLocaleFromLanguageTag(app.getLocale())
+      const copy = desktopNativeCopy(locale)
+      while (true) {
+        const admission = inspectDesktopProfileChannelAdmission(
+          releaseUserDataLocations,
+          activeProfileDir,
+          activeProfileName,
+        )
+        if (admission.status === 'allow') break
+        const previous = admission.reason === 'other-channel-latest'
+          ? admission.previous
+          : undefined
+        const result = await showDesktopMessageBox({
+          type: 'warning',
+          title: copy.profileCompatibilityTitle,
+          message: copy.profileCompatibilityMessage(activeProfileName, previous?.productName),
+          detail: previous === undefined
+            ? copy.profileCompatibilityUnknownDetail(PRODUCT_NAME, appVersion, currentDshVersion)
+            : copy.profileCompatibilityDetail(
+                previous.desktopVersion,
+                previous.dshVersion ?? copy.unknownVersion,
+                PRODUCT_NAME,
+                appVersion,
+                currentDshVersion,
+              ),
+          buttons: [copy.createNewProfile, copy.useProfileAnyway, copy.quit],
+          defaultId: 0,
+          cancelId: 2,
+        })
+        if (result.response === 1) break
+        if (result.response === 2) {
+          await shutdown.request(0)
+          return
+        }
+        const creation = await new Promise<'created' | 'cancelled'>(resolve => {
+          let settled = false
+          const finish = (value: 'created' | 'cancelled'): void => {
+            if (settled) return
+            settled = true
+            resolve(value)
+          }
+          profileCompatibilityCreateWindow = new ProfileCreateWindow({
+            locale,
+            onSubmit: name => {
+              assertDesktopProfileName(name)
+              const selection = readDesktopProfileState(selectionStatePath)
+              if (selection.active !== activeProfileName) {
+                throw new Error(`${BIN_NAME}: active Profile changed before compatibility warning completed`)
+              }
+              createFreshDesktopProfile(name)
+              selectDesktopProfile(selectionStatePath, homeDir, name)
+              finish('created')
+            },
+            onCancel: () => { finish('cancelled') },
+          })
+          profileCompatibilityCreateWindow.open()
+        })
+        profileCompatibilityCreateWindow = undefined
+        if (creation === 'cancelled') continue
+        nativeExit.requestRelaunch()
+        await shutdown.request(0)
+        return
+      }
     }
     try {
       profileCheckpoint = new DesktopProfileCheckpoint({
@@ -639,6 +738,9 @@ async function start(): Promise<void> {
         profileName: activeProfileName,
         provider: 'desktop-profile',
         appVersion,
+        desktopPackageName: DESKTOP_PACKAGE_NAME,
+        releaseChannel: DESKTOP_RELEASE_CHANNEL,
+        dshVersion: currentDshVersion,
       })
     } catch (cause) {
       electronLogger.error(
@@ -734,7 +836,6 @@ async function start(): Promise<void> {
     }
     startupStage = 'profile-composition'
     lifecycleRecorder.transitionStartupStage(startupStage)
-    const marketUserDataDir = app.getPath('userData')
     const lanAddresses = desktopLanAddresses()
     const legacyMarketSelection = readDesktopMarketStateForUserData(marketUserDataDir)
     let profilePreferences = readDesktopProfilePreferences(marketUserDataDir, activeProfileDir)
@@ -898,6 +999,9 @@ async function start(): Promise<void> {
           profileName: activeProfileName,
           provider: 'desktop-profile',
           appVersion,
+          desktopPackageName: DESKTOP_PACKAGE_NAME,
+          releaseChannel: DESKTOP_RELEASE_CHANNEL,
+          dshVersion: currentDshVersion,
         })
       } catch (cause) {
         electronLogger.error(
@@ -1084,7 +1188,7 @@ async function start(): Promise<void> {
             name: activeProfileName,
             dir: prepared.profile.dir,
           },
-          create: name => createDesktopWebProfile(homeDir, name),
+          create: name => createFreshDesktopProfile(name),
           list: () => listDesktopProfiles(homeDir),
           canDelete: name => canDeleteDesktopProfile({
             home: homeDir,
@@ -1099,8 +1203,7 @@ async function start(): Promise<void> {
               currentProfileName: activeProfileName,
               clearDisabledState: () => clearDesktopProfilePluginState(pluginManagementStatePath, name),
               clearCheckpoint: async () => {
-                clearDesktopProfileCheckpoint(marketUserDataDir, profileDir)
-                await clearDesktopSetupWizardState(marketUserDataDir, profileDir)
+                clearDesktopProfileUsageHistory(releaseUserDataLocations, profileDir)
               },
             }, name)
             try {
