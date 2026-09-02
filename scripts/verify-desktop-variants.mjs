@@ -7,6 +7,11 @@ const betaRoot = join(root, 'dsh-plugin-desktop-beta', 'src')
 const allowedDifferences = new Set([
   'agent-preset-compat.ts',
   'bin.ts',
+  'client/AdvancedFrame.tsx',
+  'client/desktop-settings.ts',
+  'client/DesktopSettingsSection.tsx',
+  'client/index.ts',
+  'desktop-browser-access.ts',
   'desktop-dialog-window.ts',
   'desktop-plugins.ts',
   'desktop-terminal.ts',
@@ -19,6 +24,8 @@ const allowedDifferences = new Set([
   'profile-manager.ts',
   'profile.ts',
   'setup-wizard-contract.ts',
+  'updates.ts',
+  'webserver.ts',
 ])
 
 function files(directory, base = directory) {

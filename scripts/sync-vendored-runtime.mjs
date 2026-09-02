@@ -36,6 +36,11 @@ const channel = requestedChannel ?? upstreamDocument.activeChannel
 if (channel !== 'stable' && channel !== 'beta') fail(`unknown release channel ${JSON.stringify(channel)}`)
 const upstream = upstreamDocument.channels?.[channel]
 if (upstream === undefined || typeof upstream !== 'object') fail(`missing upstream metadata for ${channel}`)
+const otherChannel = channel === 'stable' ? 'beta' : 'stable'
+const otherVersion = upstreamDocument.channels?.[otherChannel]?.sourceVersion
+if (typeof otherVersion !== 'string' || !/^[0-9A-Za-z][0-9A-Za-z.-]*$/u.test(otherVersion)) {
+  fail(`unsafe ${otherChannel} source version ${JSON.stringify(otherVersion)}`)
+}
 const pluginPaths = [
   join(root, upstream.package, 'package.json'),
   ...(channel === 'beta' ? [join(root, 'dsh-community-market', 'package.json')] : []),
@@ -51,6 +56,8 @@ const manifestPath = join(vendorDirectory, 'manifest.json')
 const resolutionSelector = (name, range = version) => `${name}@npm:${range}`
 const isChannelResolution = selector => selector.endsWith(`@npm:${version}`)
   || selector.endsWith(`@npm:^${version}`)
+const isOtherChannelResolution = selector => selector.endsWith(`@npm:${otherVersion}`)
+  || selector.endsWith(`@npm:^${otherVersion}`)
 
 function packageName(filename) {
   const suffix = `-${version}.tgz`
@@ -123,7 +130,7 @@ function writeVendor() {
 
   const workspace = readJson(workspacePath)
   const resolutions = Object.fromEntries(Object.entries(workspace.resolutions ?? {})
-    .filter(([selector]) => !isChannelResolution(selector)))
+    .filter(([selector]) => !isDshResolution(selector) || isOtherChannelResolution(selector)))
   for (const entry of packages) {
     resolutions[resolutionSelector(entry.name)] = expectedResolution(entry)
     resolutions[resolutionSelector(entry.name, `^${version}`)] = expectedResolution(entry)

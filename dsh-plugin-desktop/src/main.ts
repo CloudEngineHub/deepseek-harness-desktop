@@ -1145,10 +1145,10 @@ async function start(): Promise<void> {
               ? desktopLanBrowserUrls(lan.actualPort, lan.addresses)
               : []
             return {
-              localUrl: hostCtx.connection.authenticatedUrl(
+              localUrl: browserAccess.authenticatedUrl(
                 desktopLoopbackBrowserUrl(hostCtx.webServer.port),
               ),
-              lanUrls: lanOrigins.map(url => hostCtx.connection.authenticatedUrl(url)),
+              lanUrls: lanOrigins.map(url => browserAccess.authenticatedUrl(url)),
               lanState: lan.state,
               lanError: lan.errorCode,
               lanCaFingerprint: lan.caFingerprint,
