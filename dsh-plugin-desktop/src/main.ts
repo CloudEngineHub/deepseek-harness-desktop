@@ -365,7 +365,6 @@ async function start(): Promise<void> {
   let sessionProjectionCacheRecovery:
     | Extract<SessionProjectionCacheRecoveryResult, { status: 'quarantined' }>
     | undefined
-  let profileRecoveryActionUsed = false
   let recoveryTerminalAvailable = false
   let startupStage: DesktopStartupFailureStage = 'electron-ready'
   const appVersion = desktopProductVersion()
@@ -639,6 +638,7 @@ async function start(): Promise<void> {
     recoveryTerminalAvailable = true
     const locale = desktopLocaleFromLanguageTag(app.getLocale())
     const recoveryProfileToken = randomUUID()
+    let expectedRecoveryProfileName = activeProfileName
     const openStartupProfileCreator = async (): Promise<void> => {
       await new Promise<void>(resolve => {
         let settled = false
@@ -650,17 +650,14 @@ async function start(): Promise<void> {
         profileCompatibilityCreateWindow = new ProfileCreateWindow({
           locale,
           onSubmit: name => {
-            if (profileRecoveryActionUsed) {
-              throw new Error(`${BIN_NAME}: the Profile recovery action is no longer valid`)
-            }
             assertDesktopProfileName(name)
             const selection = readDesktopProfileState(selectionStatePath)
-            if (selection.active !== activeProfileName) {
-              throw new Error(`${BIN_NAME}: active Profile changed before recovery`)
+            if (selection.active !== expectedRecoveryProfileName) {
+              throw new Error(`${BIN_NAME}: active Profile changed outside recovery`)
             }
             createFreshDesktopProfile(name)
             selectDesktopProfile(selectionStatePath, homeDir, name)
-            profileRecoveryActionUsed = true
+            expectedRecoveryProfileName = name
             finish()
           },
           onCancel: finish,
@@ -680,18 +677,20 @@ async function start(): Promise<void> {
         }))
       },
       switchProfile: (name, token) => {
-        if (token !== recoveryProfileToken || profileRecoveryActionUsed) {
+        if (token !== recoveryProfileToken) {
           throw new Error(`${BIN_NAME}: the Profile recovery action is no longer valid`)
         }
-        profileRecoveryActionUsed = true
         assertDesktopProfileName(name)
         const selection = readDesktopProfileState(selectionStatePath)
-        if (selection.active !== activeProfileName) throw new Error(`${BIN_NAME}: active Profile changed before recovery`)
+        if (selection.active !== expectedRecoveryProfileName) {
+          throw new Error(`${BIN_NAME}: active Profile changed outside recovery`)
+        }
         const target = listDesktopProfiles(homeDir).find(profile => profile.name === name)
         if (target === undefined || !target.webCapable || target.problem !== undefined) {
           throw new Error(`${BIN_NAME}: Profile ${JSON.stringify(name)} is unavailable`)
         }
         selectDesktopProfile(selectionStatePath, homeDir, name)
+        expectedRecoveryProfileName = name
       },
       openCreator: openStartupProfileCreator,
     }
