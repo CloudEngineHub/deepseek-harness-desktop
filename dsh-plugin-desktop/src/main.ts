@@ -127,7 +127,8 @@ import {
 import type { DesktopSetupWizardResult } from './setup-wizard-contract.ts'
 import { DesktopSetupWizardWindow } from './setup-wizard-window.ts'
 import { ProfileCreateWindow } from './profile-create-window.ts'
-import { showDesktopMessageBox } from './desktop-dialog-window.ts'
+import { DesktopProfileSelectionWindow } from './profile-selection-window.ts'
+import { showDesktopDialog } from './desktop-dialog-window.ts'
 import {
   clearDesktopProfileUsageHistory,
   desktopReleaseUserDataLocations,
@@ -357,6 +358,7 @@ async function start(): Promise<void> {
   let startupRecoveryWindow: DesktopStartupRecoveryWindow | undefined
   let setupWizardWindow: DesktopSetupWizardWindow | undefined
   let profileCompatibilityCreateWindow: ProfileCreateWindow | undefined
+  let profileSelectionWindow: DesktopProfileSelectionWindow | undefined
   let startupRecoveryConfigurationPaths: DesktopStartupRecoveryConfigurationPaths | undefined
   let profileCheckpoint: DesktopProfileCheckpoint | undefined
   let startupRecoveryProfileActions: DesktopStartupRecoveryProfileActions | undefined
@@ -525,6 +527,10 @@ async function start(): Promise<void> {
       profileCompatibilityCreateWindow.open()
       return true
     }
+    if (profileSelectionWindow !== undefined) {
+      profileSelectionWindow.show()
+      return true
+    }
     if (setupWizardWindow !== undefined) {
       setupWizardWindow.show()
       return true
@@ -631,14 +637,48 @@ async function start(): Promise<void> {
       homeDir,
     })
     recoveryTerminalAvailable = true
+    const locale = desktopLocaleFromLanguageTag(app.getLocale())
     const recoveryProfileToken = randomUUID()
+    const openStartupProfileCreator = async (): Promise<void> => {
+      await new Promise<void>(resolve => {
+        let settled = false
+        const finish = (): void => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        profileCompatibilityCreateWindow = new ProfileCreateWindow({
+          locale,
+          onSubmit: name => {
+            if (profileRecoveryActionUsed) {
+              throw new Error(`${BIN_NAME}: the Profile recovery action is no longer valid`)
+            }
+            assertDesktopProfileName(name)
+            const selection = readDesktopProfileState(selectionStatePath)
+            if (selection.active !== activeProfileName) {
+              throw new Error(`${BIN_NAME}: active Profile changed before recovery`)
+            }
+            createFreshDesktopProfile(name)
+            selectDesktopProfile(selectionStatePath, homeDir, name)
+            profileRecoveryActionUsed = true
+            finish()
+          },
+          onCancel: finish,
+        })
+        profileCompatibilityCreateWindow.open()
+      })
+      profileCompatibilityCreateWindow = undefined
+    }
     startupRecoveryProfileActions = {
       token: recoveryProfileToken,
-      list: () => listDesktopProfiles(homeDir).map(profile => ({
-        name: profile.name,
-        current: profile.name === activeProfileName,
-        selectable: profile.webCapable && profile.problem === undefined,
-      })),
+      list: () => {
+        const selectedProfileName = readDesktopProfileState(selectionStatePath).active
+        return listDesktopProfiles(homeDir).map(profile => ({
+          name: profile.name,
+          current: profile.name === selectedProfileName,
+          selectable: profile.webCapable && profile.problem === undefined,
+        }))
+      },
       switchProfile: (name, token) => {
         if (token !== recoveryProfileToken || profileRecoveryActionUsed) {
           throw new Error(`${BIN_NAME}: the Profile recovery action is no longer valid`)
@@ -653,20 +693,24 @@ async function start(): Promise<void> {
         }
         selectDesktopProfile(selectionStatePath, homeDir, name)
       },
-      openCreator: () => {
-        runtime.openProfileCreateWindow({
-          onSubmit: async name => {
-            assertDesktopProfileName(name)
-            const selection = readDesktopProfileState(selectionStatePath)
-            if (selection.active !== activeProfileName) throw new Error(`${BIN_NAME}: active Profile changed before recovery`)
-            createFreshDesktopProfile(name)
-            selectDesktopProfile(selectionStatePath, homeDir, name)
-          },
-        })
-      },
+      openCreator: openStartupProfileCreator,
+    }
+    const openCompatibilityProfileSelector = async (): Promise<'restart' | 'cancel' | 'unavailable'> => {
+      const profileActions = startupRecoveryProfileActions
+      if (profileActions === undefined) return 'unavailable'
+      try {
+        profileSelectionWindow = new DesktopProfileSelectionWindow({ locale, profileActions })
+        return await profileSelectionWindow.run()
+      } catch (cause) {
+        electronLogger.error(
+          `${BIN_NAME}: failed to open Profile selector: ${cause instanceof Error ? cause.message : String(cause)}`,
+        )
+        return 'unavailable'
+      } finally {
+        profileSelectionWindow = undefined
+      }
     }
     if (!recoveryModeRequested) {
-      const locale = desktopLocaleFromLanguageTag(app.getLocale())
       const copy = desktopNativeCopy(locale)
       while (true) {
         const admission = inspectDesktopProfileChannelAdmission(
@@ -678,7 +722,7 @@ async function start(): Promise<void> {
         const previous = admission.reason === 'other-channel-latest'
           ? admission.previous
           : undefined
-        const result = await showDesktopMessageBox({
+        const result = await showDesktopDialog({
           type: 'warning',
           title: copy.profileCompatibilityTitle,
           message: copy.profileCompatibilityMessage(activeProfileName, previous?.productName),
@@ -691,7 +735,9 @@ async function start(): Promise<void> {
                 appVersion,
                 currentDshVersion,
               ),
-          buttons: [copy.createNewProfile, copy.useProfileAnyway, copy.quit],
+          advisory: copy.profileCompatibilityWarning,
+          presentation: 'profile-compatibility',
+          buttons: [copy.switchProfile, copy.useProfileAnyway, copy.quit],
           defaultId: 0,
           cancelId: 2,
         })
@@ -700,31 +746,8 @@ async function start(): Promise<void> {
           await shutdown.request(0)
           return
         }
-        const creation = await new Promise<'created' | 'cancelled'>(resolve => {
-          let settled = false
-          const finish = (value: 'created' | 'cancelled'): void => {
-            if (settled) return
-            settled = true
-            resolve(value)
-          }
-          profileCompatibilityCreateWindow = new ProfileCreateWindow({
-            locale,
-            onSubmit: name => {
-              assertDesktopProfileName(name)
-              const selection = readDesktopProfileState(selectionStatePath)
-              if (selection.active !== activeProfileName) {
-                throw new Error(`${BIN_NAME}: active Profile changed before compatibility warning completed`)
-              }
-              createFreshDesktopProfile(name)
-              selectDesktopProfile(selectionStatePath, homeDir, name)
-              finish('created')
-            },
-            onCancel: () => { finish('cancelled') },
-          })
-          profileCompatibilityCreateWindow.open()
-        })
-        profileCompatibilityCreateWindow = undefined
-        if (creation === 'cancelled') continue
+        const selectionResult = await openCompatibilityProfileSelector()
+        if (selectionResult !== 'restart') continue
         nativeExit.requestRelaunch()
         await shutdown.request(0)
         return

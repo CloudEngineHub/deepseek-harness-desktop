@@ -650,8 +650,10 @@ describe('published package surface', () => {
     expect(main).toContain('lifecycleStartupFailureReason(cause, runtime)')
   })
 
-  it('routes requested and failed startup through the unified recovery window without automatic mutation', () => {
+  it('keeps compatibility Profile selection separate from requested and failed recovery', () => {
     const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
+    const recoveryUi = readFileSync(new URL('src/native-ui/recovery/App.tsx', packageRoot), 'utf8')
+    const selectorUi = readFileSync(new URL('src/native-ui/profile-selector/App.tsx', packageRoot), 'utf8')
     const windows = [...main.matchAll(/await openStartupRecoveryWindow\(/gu)]
       .map(match => match.index)
     const requested = main.indexOf('if (recoveryModeRequested)')
@@ -659,8 +661,11 @@ describe('published package surface', () => {
     const quiesce = main.indexOf('const recoveryActionsSafe = await generation.quiesceForRecovery()')
     const configureTerminal = main.indexOf('runtime.configureTerminal({')
     const terminalAvailable = main.indexOf('recoveryTerminalAvailable = true')
+    const compatibilitySelector = main.indexOf('await openCompatibilityProfileSelector()')
 
     expect(windows).toHaveLength(2)
+    expect(compatibilitySelector).toBeGreaterThanOrEqual(0)
+    expect(compatibilitySelector).toBeLessThan(requested)
     expect(windows[0]).toBeGreaterThan(requested)
     expect(windows[0]).toBeLessThan(prepare)
     expect(configureTerminal).toBeGreaterThanOrEqual(0)
@@ -668,9 +673,14 @@ describe('published package surface', () => {
     expect(terminalAvailable).toBeGreaterThan(configureTerminal)
     expect(terminalAvailable).toBeLessThan(requested)
     expect(main.match(/runtime\.configureTerminal\(\{/gu)).toHaveLength(1)
-    expect(windows[1]).toBeGreaterThan(windows[0]!)
     expect(quiesce).toBeGreaterThan(prepare)
     expect(windows[1]).toBeGreaterThan(quiesce)
+    expect(main).toContain("buttons: [copy.switchProfile, copy.useProfileAnyway, copy.quit]")
+    expect(main).toContain('advisory: copy.profileCompatibilityWarning')
+    expect(main).toContain("presentation: 'profile-compatibility'")
+    expect(main).not.toContain("'Profile selection was requested from the compatibility warning.'")
+    expect(recoveryUi).toContain("from '../shared/ProfileSelector.tsx'")
+    expect(selectorUi).toContain("from '../shared/ProfileSelector.tsx'")
     expect(main).not.toContain('installRecovery')
     expect(main).not.toContain('restoreLatest')
     expect(main).not.toContain('restoreLastKnownGood')
