@@ -32,7 +32,7 @@ function context(
     appOutDir,
     electronPlatformName,
     ...(arch === undefined ? {} : { arch }),
-    packager: { appInfo: { productFilename: 'DSH Desktop' } },
+    packager: { appInfo: { productFilename: 'DSH Desktop Beta' } },
   }
 }
 
@@ -123,7 +123,7 @@ describe('packaged desktop runtime verification', () => {
   it.each([
     [
       'darwin',
-      join('/build', 'DSH Desktop.app', 'Contents', 'Resources', 'app.asar'),
+      join('/build', 'DSH Desktop Beta.app', 'Contents', 'Resources', 'app.asar'),
     ],
     [
       'win32',
@@ -278,7 +278,7 @@ describe('packaged desktop runtime verification', () => {
     const runtimeContext = context('/build', 'win32')
     const unpackedRoot = resolvePackagedUnpackedRoot(runtimeContext)
     const resolvePackage = vi.fn<PackageResolver>((specifier) => {
-      if (specifier === 'dsh-plugin-desktop/profiles') {
+      if (specifier === 'dsh-plugin-desktop-beta/profiles') {
         throw new Error('missing export')
       }
       return completePackageResolver(unpackedRoot)(specifier)
@@ -290,7 +290,7 @@ describe('packaged desktop runtime verification', () => {
       () => true,
       resolvePackage,
     )).toThrow(
-      `packaged runtime at ${unpackedRoot} cannot resolve required package export dsh-plugin-desktop/profiles`,
+      `packaged runtime at ${unpackedRoot} cannot resolve required package export dsh-plugin-desktop-beta/profiles`,
     )
   })
 

@@ -232,7 +232,7 @@ async function createDiagnosticsArchive(data: DiagnosticExportWorkerData): Promi
     else if (entry.name === 'crash-evidence/active-run.json') includedActiveRunMarker = true
   }
   const info = [
-    'app: dsh-plugin-desktop',
+    'app: dsh-plugin-desktop-beta',
     `desktop-version: ${data.appVersion}`,
     `platform: ${process.platform}`,
     `arch: ${process.arch}`,

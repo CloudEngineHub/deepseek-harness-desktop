@@ -53,7 +53,7 @@ The profile name and absolute directory come from `desktopProfiles.current`; the
 
 `desktopPnpm.run()` runs bundled pnpm directly. `runPlugin()` uses packaged DSH CLI semantics so profile initialization, relative sources, and bundle reconciliation remain authoritative. Both operations belong to the current generation and use the subprocess service for complete process-tree ownership.
 
-The launcher-private `desktopRuntime`, `desktopPnpmBootstrap`, Electron executable, Node helpers, and ABI environment are not third-party APIs. The supported public contracts are only `dsh-plugin-desktop/profile-service` and `dsh-plugin-desktop/pnpm`.
+The launcher-private `desktopRuntime`, `desktopPnpmBootstrap`, Electron executable, Node helpers, and ABI environment are not third-party APIs. On the Beta branch, the supported public contracts are only `dsh-plugin-desktop-beta/profile-service` and `dsh-plugin-desktop-beta/pnpm`.
 
 ## Packaging and runtime closure
 

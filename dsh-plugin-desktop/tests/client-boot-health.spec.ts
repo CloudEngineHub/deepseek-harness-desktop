@@ -14,7 +14,7 @@ describe('desktop renderer boot health', () => {
     const loader = {
       await: awaitLoader,
       * entries() {
-        yield { options: { name: 'dsh-plugin-desktop' }, fiber: { state: 2 } }
+        yield { options: { name: 'dsh-plugin-desktop-beta' }, fiber: { state: 2 } }
         yield { options: { name: 'dsh-vision-router' }, fiber: { state: 3 } }
       },
     }
@@ -34,7 +34,7 @@ describe('desktop renderer boot health', () => {
     const loader = {
       await: vi.fn(async () => { throw error }),
       * entries() {
-        yield { options: { name: 'dsh-plugin-desktop' }, fiber: { state: 2 } }
+        yield { options: { name: 'dsh-plugin-desktop-beta' }, fiber: { state: 2 } }
         yield { options: { name: 'dsh-vision-router' }, fiber: { state: 3 } }
       },
     }
@@ -50,7 +50,7 @@ describe('desktop renderer boot health', () => {
     const loader = {
       await: vi.fn(async () => {}),
       * entries() {
-        yield { options: { name: 'dsh-plugin-desktop' }, fiber: { state: 2 } }
+        yield { options: { name: 'dsh-plugin-desktop-beta' }, fiber: { state: 2 } }
       },
     }
     const request = vi.fn(async () => new Response(null, { status: 204 }))
@@ -69,7 +69,7 @@ describe('desktop renderer boot health', () => {
     const loader = {
       await: vi.fn(async () => {}),
       * entries() {
-        yield { options: { name: 'dsh-plugin-desktop' }, fiber: { state: 2 } }
+        yield { options: { name: 'dsh-plugin-desktop-beta' }, fiber: { state: 2 } }
       },
     }
     const request = vi.fn(async () => new Response(null, { status: 204 }))
@@ -89,7 +89,7 @@ describe('desktop renderer boot health', () => {
     const loader = {
       await: vi.fn(() => new Promise<void>((resolve) => { settle = resolve })),
       * entries() {
-        yield { options: { name: 'dsh-plugin-desktop' }, fiber: { state: 2 } }
+        yield { options: { name: 'dsh-plugin-desktop-beta' }, fiber: { state: 2 } }
       },
     }
     const request = vi.fn(async () => new Response(null, { status: 204 }))

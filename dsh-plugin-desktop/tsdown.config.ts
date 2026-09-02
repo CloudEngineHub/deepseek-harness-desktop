@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown'
 
-const PACKAGE_NAME = 'dsh-plugin-desktop'
+const PACKAGE_NAME = 'dsh-plugin-desktop-beta'
 
 export default defineConfig([
   {

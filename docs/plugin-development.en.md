@@ -22,8 +22,8 @@ If a plugin only makes sense in Desktop, declare the services as required inject
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
 import { randomUUID } from 'node:crypto'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
 
 export const name = 'example-desktop-plugin'
 export const inject = ['desktopProfiles', 'desktopPnpm']
@@ -96,9 +96,9 @@ An external development sandbox is an ordinary `dsh web` mirror built beside Des
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type {} from 'dsh-plugin-desktop/pnpm'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type {} from 'dsh-plugin-desktop-beta/pnpm'
 
 declare function prepareSandboxProfile(options: {
   readonly sourceProfileDir: string

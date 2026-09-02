@@ -82,7 +82,7 @@ function licenseExpression(manifest) {
 const failures = []
 const seen = new Set()
 const manifests = []
-const queue = [{ name: rootManifest.name ?? 'dsh-plugin-desktop', manifestPath: join(packageRoot, 'package.json') }]
+const queue = [{ name: rootManifest.name ?? 'dsh-plugin-desktop-beta', manifestPath: join(packageRoot, 'package.json') }]
 
 for (let index = 0; index < queue.length; index += 1) {
   const current = queue[index]

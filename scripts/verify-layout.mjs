@@ -18,6 +18,10 @@ const fabric = readJson('dsh-community-fabric/package.json')
 const market = readJson('dsh-community-market/package.json')
 const upstreamPackage = readJson('deepseek-harness/package.json')
 
+if (plugin.name !== 'dsh-plugin-desktop-beta') {
+  fail('the beta Desktop workspace must publish as dsh-plugin-desktop-beta')
+}
+
 if (workspace.packageManager !== 'yarn@4.18.0') {
   fail('the product workspace must pin yarn@4.18.0')
 }
@@ -29,7 +33,7 @@ if (JSON.stringify(workspace.workspaces) !== JSON.stringify([
   fail('the root Yarn workspace must contain the desktop, community-fabric, and community-market packages')
 }
 for (const [name, manifest] of [
-  ['dsh-plugin-desktop', plugin],
+  ['dsh-plugin-desktop-beta', plugin],
   ['dsh-community-fabric', fabric],
   ['dsh-community-market', market],
 ]) {

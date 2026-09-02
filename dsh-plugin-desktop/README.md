@@ -1,8 +1,10 @@
-# DSH Desktop
+# DSH Desktop Beta
 
 English | [中文](README.zh.md)
 
-`dsh-plugin-desktop` runs DSH in Electron while remaining part of the ordinary Cordis composition. The installed application is named **DSH Desktop**. The package provides the `dsh-plugin-desktop` executable and the `dsh-desktop` alias; the registered npm package name is the reliable `npx` entry.
+`dsh-plugin-desktop-beta` runs the Beta channel of DSH Desktop in Electron while remaining part of the ordinary Cordis composition. The installed application is named **DSH Desktop Beta**. The package provides only the `dsh-plugin-desktop-beta` executable and the `dsh-desktop-beta` alias, so it does not conflict with the stable npm package or commands.
+
+The stable `dsh-plugin-desktop` package and this Beta package can be installed on the same machine. They use separate application names, system identities, shortcuts, single-instance locks, and Electron user-data directories. Both intentionally use the same `DSH_HOME` (or the default `~/.dsh`), so profiles, settings, plugins, and sessions are shared. Simultaneous installation is supported; reliable simultaneous execution is not, because both applications can contend for shared profile files, ports, and dependency state. The current updater contract is unchanged, including Beta's existing stable-release discovery and rollback behavior.
 
 ## Architecture
 
@@ -61,7 +63,7 @@ On Windows, the launcher pins the browse directory-picker backend and keeps the 
 
 This alpha runtime migration does not carry the Desktop-owned Workspace folder-drop behavior or the chat-attachment drag-isolation patch. Use the ordinary Workspace selection flow while those interactions are re-evaluated against the alpha Client UI.
 
-Windows PowerShell keeps the upstream `pwsh-sandbox` behavior and Windows ACL confinement in every presentation mode. The launcher generation replaces only that Host provider with the `dsh-plugin-desktop/windows-pwsh-sandbox` subpath from this same package. For the exact upstream ACL-runner argv, the adapter launches the packaged Electron executable in Node mode through a private trampoline, removes the Node-mode variable before the restricted PowerShell process is created, and delegates all policy and failure handling back to the upstream runner. The desktop deploy root also pins a Yarn patch that combines `STARTF_USESHOWWINDOW` with the existing `STARTF_USESTDHANDLES` and `SW_HIDE` on both native restricted-process paths. This preserves captured stdio without suppressing console allocation and requests a hidden initial show state when Windows creates the GUI-hosted PowerShell process's first console window. It does not use the upstream-incompatible `CREATE_NO_WINDOW` or `CREATE_NEW_CONSOLE` flags. Direct `danger-full-access` PowerShell, macOS, and Linux execution are unchanged; there is no automatic unrestricted fallback when Windows confinement fails.
+Windows PowerShell keeps the upstream `pwsh-sandbox` behavior and Windows ACL confinement in every presentation mode. The launcher generation replaces only that Host provider with the `dsh-plugin-desktop-beta/windows-pwsh-sandbox` subpath from this same package. For the exact upstream ACL-runner argv, the adapter launches the packaged Electron executable in Node mode through a private trampoline, removes the Node-mode variable before the restricted PowerShell process is created, and delegates all policy and failure handling back to the upstream runner. The desktop deploy root also pins a Yarn patch that combines `STARTF_USESHOWWINDOW` with the existing `STARTF_USESTDHANDLES` and `SW_HIDE` on both native restricted-process paths. This preserves captured stdio without suppressing console allocation and requests a hidden initial show state when Windows creates the GUI-hosted PowerShell process's first console window. It does not use the upstream-incompatible `CREATE_NO_WINDOW` or `CREATE_NEW_CONSOLE` flags. Direct `danger-full-access` PowerShell, macOS, and Linux execution are unchanged; there is no automatic unrestricted fallback when Windows confinement fails.
 
 ## Extended window mode
 
@@ -142,25 +144,25 @@ See [Plugin services for authors](docs/plugin-services.md) for required injectio
 The package can then be launched from npm with:
 
 ```sh
-npx dsh-plugin-desktop
+npx dsh-plugin-desktop-beta
 ```
 
 ## Launching from the command line
 
-The package installs two equivalent commands, `dsh-desktop` and `dsh-plugin-desktop`. Both launch the packaged Electron launcher (`lib/main.js`) when invoked without arguments.
+The package installs two equivalent Beta-only commands, `dsh-desktop-beta` and `dsh-plugin-desktop-beta`. Both launch the packaged Electron launcher (`lib/main.js`) when invoked without arguments.
 
-- **Global install** — `npm install -g dsh-plugin-desktop` installs the `electron` peer automatically, and `dsh-desktop` then starts the application against the default DSH home:
+- **Global install** — `npm install -g dsh-plugin-desktop-beta` installs the `electron` peer automatically, and `dsh-desktop-beta` then starts the application against the shared default DSH home:
   ```sh
-  dsh-desktop
+  dsh-desktop-beta
   ```
-- **Inside a profile** — after `dsh plugin --profile <name> add dsh-plugin-desktop`, the command lives in the profile's `node_modules/.bin`. pnpm does not install the `electron` peer automatically; add it when you want the command to launch:
+- **Inside a profile** — after `dsh plugin --profile <name> add dsh-plugin-desktop-beta`, the command lives in the profile's `node_modules/.bin`. pnpm does not install the `electron` peer automatically; add it when you want the command to launch:
   ```sh
   dsh plugin --profile <name> add electron
   ```
   Native build approvals (node-pty, koffi, electron, and others) follow pnpm's usual `allowBuilds` rules.
 - **Electron missing** — the command prints a short installation guide instead of failing with a module error.
 
-Booting a profile that is composed with the desktop shell under an ordinary `dsh` invocation (without the launcher's `desktopRuntime` service) prints a reminder telling you to start it with `dsh-desktop` or from the packaged application; the shell registers nothing in that case.
+Booting a profile that is composed with the desktop shell under an ordinary `dsh` invocation (without the launcher's `desktopRuntime` service) prints a reminder telling you to start it with `dsh-desktop-beta` or from the packaged application; the shell registers nothing in that case.
 
 A third-party Host plugin only needs its normal `dsh.bundle` patch. A plugin with browser UI also publishes the normal `dsh.client` metadata with `platform: "web"` and an exported `./client` artifact. The upstream Web client module graph discovers it in every mode; Electron does not require a separate client build or a desktop-specific registration API. Enhanced-mode contributions must target services and slots that exist in that explicit composition rather than assuming the official layout or sidebar occupant owns them.
 
@@ -182,7 +184,7 @@ Recovery mode also uses an independent Desktop-owned window with an empty 36-pix
 
 ## Logs and diagnostics
 
-DSH Desktop writes UTF-8 logs under Electron's user-data directory: `%APPDATA%\DSH Desktop\logs` on Windows and `~/Library/Application Support/DSH Desktop/logs` on macOS. Full logs use `dsh-YYYY-MM-DD.log`; warnings and errors are also written to `dsh-YYYY-MM-DD.error.log`. Files rotate at 10 MiB, files older than seven days are removed at startup, and the directory is kept below 200 MiB. The `dsh-desktop.logLevel` setting controls verbosity and defaults to `info`.
+DSH Desktop Beta writes UTF-8 logs under its separate Electron user-data directory: `%APPDATA%\DSH Desktop Beta\logs` on Windows and `~/Library/Application Support/DSH Desktop Beta/logs` on macOS. Full logs use `dsh-YYYY-MM-DD.log`; warnings and errors are also written to `dsh-YYYY-MM-DD.error.log`. Files rotate at 10 MiB, files older than seven days are removed at startup, and the directory is kept below 200 MiB. The `dsh-desktop.logLevel` setting controls verbosity and defaults to `info`.
 
 On macOS and Windows, choose **Export Diagnostics…** from the tray to create a ZIP under the sibling `diagnostics` directory and reveal it in the system file manager. Export runs outside Electron's main thread, collects recent owned logs and local Crashpad `.dmp` files under a shared 50 MiB evidence cap, includes the `crash-evidence/active-run.json` marker when present, adds `system-info.txt`, and retains the three newest ZIP files. The confirmation dialog explains the privacy boundary before any archive is created. Recognized credentials are masked, but logs can still contain local paths, workspace IDs, session IDs, prompts, tool output, or third-party plugin messages; crash dumps can contain fragments of process memory. Review the ZIP before sharing it, especially before uploading it publicly.
 
@@ -202,8 +204,8 @@ WSL2 is suitable for Linux headless build, typecheck, and unit-test coverage fro
 source ~/.nvm/nvm.sh
 git submodule update --init --recursive
 corepack yarn install --immutable
-corepack yarn workspace dsh-plugin-desktop typecheck
-corepack yarn workspace dsh-plugin-desktop test
+corepack yarn workspace dsh-plugin-desktop-beta typecheck
+corepack yarn workspace dsh-plugin-desktop-beta test
 corepack yarn build
 ```
 
@@ -221,7 +223,7 @@ corepack.cmd yarn dist:win
 
 Python and Visual Studio C++ Build Tools are not required. The Windows command uses `node-pty`'s bundled x64 Node-API binaries instead of asking Electron Builder to rebuild them from source, and the packaged-runtime gate rejects an installer staging tree that omits those binaries.
 
-`dist:win` refuses non-Windows and non-x64 hosts, runs a Windows-safe gate containing the build, all TypeScript compiler faces, packaging and native-shell focused tests, and the runtime-closure verifier, then builds an assisted NSIS installer and verifies both generated PE files. The full cross-platform suite remains CI-owned because some POSIX execution tests are not Windows programs. The installer allows a per-user or elevated all-users installation, permits changing the installation directory, creates Start Menu and desktop shortcuts, and preserves DSH user data when the application is uninstalled. Version `2.0.5-beta.2` is written to `dsh-plugin-desktop\dist\DSH-Desktop-2.0.5-beta.2-x64-Setup.exe`; the unpacked application remains at `dsh-plugin-desktop\dist\win-unpacked\DSH Desktop.exe` for smoke testing.
+`dist:win` refuses non-Windows and non-x64 hosts, runs a Windows-safe gate containing the build, all TypeScript compiler faces, packaging and native-shell focused tests, and the runtime-closure verifier, then builds an assisted NSIS installer and verifies both generated PE files. The full cross-platform suite remains CI-owned because some POSIX execution tests are not Windows programs. The installer allows a per-user or elevated all-users installation, permits changing the installation directory, creates Start Menu and desktop shortcuts, and preserves DSH user data when the application is uninstalled. Version `2.0.5-beta.2` is written to `dsh-plugin-desktop\dist\DSH-Desktop-Beta-2.0.5-beta.2-x64-Setup.exe`; the unpacked application remains at `dsh-plugin-desktop\dist\win-unpacked\DSH Desktop Beta.exe` for smoke testing.
 
 This local command deliberately strips Windows certificate variables and sets `signExecutable=false`. Its output is installable for testing but has no Authenticode publisher, so Windows can display an Unknown publisher or SmartScreen warning. A signed Windows release, certificate verification, installer upgrade/uninstall testing, and native UI/sandbox smoke remain separate release gates.
 
@@ -233,7 +235,7 @@ Use `yarn dist:win-portable` on a native Windows x64 machine to create an unsign
 corepack.cmd yarn dist:win-portable
 ```
 
-The output is `dsh-plugin-desktop\\dist\\DSH-Desktop-2.0.5-beta.2-x64-Portable.zip`. Extract it to any writable directory and launch `DSH Desktop.exe` without an installer, administrator access, Start Menu registration, or uninstall step. The application still keeps its profiles, logs, and caches in the normal Windows user-data directory, so this is portable distribution rather than a self-contained data sandbox. Portable archives are not handed to the NSIS updater and must be replaced manually when a new version is released. Local builds are unsigned and may trigger an Unknown publisher or SmartScreen warning; signed portable artifacts remain a release gate.
+The output is `dsh-plugin-desktop\\dist\\DSH-Desktop-Beta-2.0.5-beta.2-x64-Portable.zip`. Extract it to any writable directory and launch `DSH Desktop Beta.exe` without an installer, administrator access, Start Menu registration, or uninstall step. The application still keeps its profiles, logs, and caches in the Beta Windows user-data directory, so this is portable distribution rather than a self-contained data sandbox. Portable archives are not handed to the NSIS updater and must be replaced manually when a new version is released. Local builds are unsigned and may trigger an Unknown publisher or SmartScreen warning; signed portable artifacts remain a release gate.
 
 ### macOS DMG smoke
 

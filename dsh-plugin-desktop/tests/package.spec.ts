@@ -35,6 +35,7 @@ const manifest = JSON.parse(readFileSync(new URL('package.json', packageRoot), '
     toolsets?: Record<string, unknown>
     files?: unknown
     mac?: {
+      artifactName?: unknown
       extendInfo?: unknown
       hardenedRuntime?: unknown
       icon?: unknown
@@ -60,6 +61,8 @@ const workspaceManifest = JSON.parse(readFileSync(new URL('package.json', worksp
   scripts?: Record<string, unknown>
 }
 const ciWorkflow = readFileSync(new URL('.github/workflows/ci.yml', workspaceRoot), 'utf8')
+const productIdentity = readFileSync(new URL('src/product-identity.ts', packageRoot), 'utf8')
+const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
 
 describe('published package surface', () => {
   it('uses the Beta product version across the workspace and Desktop package', () => {
@@ -69,20 +72,37 @@ describe('published package surface', () => {
 
   it('runs desktop and community market typechecks from the root command', () => {
     expect(workspaceManifest.scripts?.typecheck)
-      .toBe('yarn workspace dsh-plugin-desktop typecheck && yarn workspace dsh-community-market typecheck')
+      .toBe('yarn workspace dsh-plugin-desktop-beta typecheck && yarn workspace dsh-community-market typecheck')
   })
 
   it('runs desktop and community market tests from the root command', () => {
     expect(workspaceManifest.scripts?.test)
-      .toBe('yarn workspace dsh-plugin-desktop test && yarn workspace dsh-community-market test')
+      .toBe('yarn workspace dsh-plugin-desktop-beta test && yarn workspace dsh-community-market test')
   })
 
   it('registers both npm launcher names', () => {
-    expect(manifest.name).toBe('dsh-plugin-desktop')
+    expect(manifest.name).toBe('dsh-plugin-desktop-beta')
     expect(manifest.bin).toEqual({
-      'dsh-plugin-desktop': 'lib/bin.js',
-      'dsh-desktop': 'lib/bin.js',
+      'dsh-plugin-desktop-beta': 'lib/bin.js',
+      'dsh-desktop-beta': 'lib/bin.js',
     })
+    expect(manifest.bin).not.toHaveProperty('dsh-desktop')
+    expect(manifest.bin).not.toHaveProperty('dsh-plugin-desktop')
+  })
+
+  it('sets a distinct Beta process identity before taking the single-instance lock', () => {
+    expect(productIdentity).toContain("DESKTOP_PACKAGE_NAME = 'dsh-plugin-desktop-beta'")
+    expect(productIdentity).toContain("STABLE_DESKTOP_PACKAGE_NAME = 'dsh-plugin-desktop'")
+    expect(productIdentity).toContain("DESKTOP_PRODUCT_NAME = 'DSH Desktop Beta'")
+    expect(productIdentity).toContain("DESKTOP_APP_ID = 'ai.deepseek.dsh.desktop.beta'")
+    expect(main).toContain('app.setAppUserModelId(DESKTOP_APP_ID)')
+    const setName = main.indexOf('app.setName(PRODUCT_NAME)')
+    const start = main.indexOf('await start()', setName)
+    const lock = main.indexOf('app.requestSingleInstanceLock()')
+    expect(setName).toBeGreaterThanOrEqual(0)
+    expect(start).toBeGreaterThan(setName)
+    expect(lock).toBeGreaterThanOrEqual(0)
+    expect(setName).toBeGreaterThan(lock)
   })
 
   it('exposes the Host plugin and desktop-owned client face', () => {
@@ -140,14 +160,14 @@ describe('published package surface', () => {
         '@deepseek-ai/dsh-client-ui-theme',
       ],
     })
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta')
     expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).not.toContain('name: dsh-community-market')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/terminal')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/pnpm')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/profiles')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/diagnostics')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/notifications')
-    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop/updates')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/terminal')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/pnpm')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/profiles')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/diagnostics')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/notifications')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toContain('name: dsh-plugin-desktop-beta/updates')
   })
 
   it('pins both selectable Market providers in the published runtime', () => {
@@ -656,8 +676,15 @@ describe('published package surface', () => {
 
   it('fixes the installed application identity', () => {
     expect(manifest.version).toBe(workspaceManifest.version)
-    expect(manifest.build?.productName).toBe('DSH Desktop')
-    expect(manifest.build?.appId).toBe('ai.deepseek.dsh.desktop')
+    expect(manifest.name).toBe('dsh-plugin-desktop-beta')
+    expect(manifest.bin).toEqual({
+      'dsh-desktop-beta': 'lib/bin.js',
+      'dsh-plugin-desktop-beta': 'lib/bin.js',
+    })
+    expect(manifest.bin).not.toHaveProperty('dsh-desktop')
+    expect(manifest.bin).not.toHaveProperty('dsh-plugin-desktop')
+    expect(manifest.build?.productName).toBe('DSH Desktop Beta')
+    expect(manifest.build?.appId).toBe('ai.deepseek.dsh.desktop.beta')
     expect(manifest.build?.asarUnpack).toEqual([
       'package.json',
       'cordis.patch.yml',
@@ -685,6 +712,7 @@ describe('published package surface', () => {
       '!node_modules/node-pty/build/**',
     ])
     expect(manifest.build?.mac?.icon).toBe('build/app-icon-mac.png')
+    expect(manifest.build?.mac?.artifactName).toBe('DSH-Desktop-Beta-${version}-${arch}.${ext}')
     expect(manifest.build?.mac?.mergeASARs).toBe(false)
     expect(manifest.build?.mac?.signIgnore).toEqual(['\\.(?:pak|dat|wasm)$'])
     expect(manifest.build?.win?.icon).toBe('build/app-icon.png')
@@ -692,7 +720,7 @@ describe('published package surface', () => {
       target: 'nsis',
       arch: ['x64'],
     }])
-    expect(manifest.build?.win?.artifactName).toBe('DSH-Desktop-${version}-${arch}-Portable.${ext}')
+    expect(manifest.build?.win?.artifactName).toBe('DSH-Desktop-Beta-${version}-${arch}-Portable.${ext}')
     expect(manifest.build?.nsis).toEqual({
       include: 'installer.nsh',
       license: 'THIRD_PARTY_NOTICES.md',
@@ -703,9 +731,9 @@ describe('published package surface', () => {
       createDesktopShortcut: true,
       createStartMenuShortcut: true,
       differentialPackage: false,
-      shortcutName: 'DSH Desktop',
+      shortcutName: 'DSH Desktop Beta',
       useZip: false,
-      artifactName: 'DSH-Desktop-${version}-${arch}-Setup.${ext}',
+      artifactName: 'DSH-Desktop-Beta-${version}-${arch}-Setup.${ext}',
     })
     expect(manifest.build?.linux?.icon).toBe('build/app-icon.png')
   })
@@ -742,13 +770,13 @@ describe('published package surface', () => {
     expect(manifest.scripts?.['verify:cli']).toBe('node scripts/verify-cli-runtime.mjs')
     expect(manifest.scripts?.check).toContain('yarn run verify:cli')
     expect(workspaceManifest.scripts?.['dist:mac'])
-      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop dist:mac')
+      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop-beta dist:mac')
     expect(workspaceManifest.scripts?.['dist:mac-smoke'])
-      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop dist:mac-smoke')
+      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop-beta dist:mac-smoke')
     expect(workspaceManifest.scripts?.['dist:win'])
-      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop dist:win')
+      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop-beta dist:win')
     expect(workspaceManifest.scripts?.['dist:win-portable'])
-      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop dist:win-portable')
+      .toBe('yarn workspace dsh-community-market build && yarn workspace dsh-plugin-desktop-beta dist:win-portable')
     expect(manifest.build?.afterPack).toBe('./scripts/verify-packaged-runtime.ts')
     expect(manifest.build?.mac).toEqual(expect.objectContaining({
       extendInfo: {
@@ -778,13 +806,13 @@ describe('published package surface', () => {
     )
 
     expect(windowsJob).not.toContain('- run: yarn check')
-    expect(windowsJob).toContain('- run: yarn workspace dsh-plugin-desktop check:win-package')
-    expect(windowsJob).toContain('run: yarn workspace dsh-plugin-desktop dist:win')
-    expect(windowsJob).toContain('run: yarn workspace dsh-plugin-desktop dist:win-portable')
+    expect(windowsJob).toContain('- run: yarn workspace dsh-plugin-desktop-beta check:win-package')
+    expect(windowsJob).toContain('run: yarn workspace dsh-plugin-desktop-beta dist:win')
+    expect(windowsJob).toContain('run: yarn workspace dsh-plugin-desktop-beta dist:win-portable')
     expect(windowsJob).toContain('DSH_PACKAGE_CHECK_ALREADY_RAN: \'1\'')
     expect(macosJob).not.toContain('- run: yarn check')
-    expect(macosJob).toContain('- run: yarn workspace dsh-plugin-desktop check:mac-package')
-    expect(macosJob).toContain('run: yarn workspace dsh-plugin-desktop dist:mac-smoke')
+    expect(macosJob).toContain('- run: yarn workspace dsh-plugin-desktop-beta check:mac-package')
+    expect(macosJob).toContain('run: yarn workspace dsh-plugin-desktop-beta dist:mac-smoke')
     expect(macosJob).toContain('DSH_PACKAGE_CHECK_ALREADY_RAN: \'1\'')
     expect(macosJob).not.toContain('- run: yarn dist:mac-smoke')
   })

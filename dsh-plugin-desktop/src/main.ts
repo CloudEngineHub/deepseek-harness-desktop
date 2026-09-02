@@ -165,9 +165,14 @@ import {
   type SessionProjectionCacheRecoveryResult,
 } from './session-projcache-recovery.ts'
 import { windowsSupportsMica } from './window-material.ts'
+import {
+  DESKTOP_APP_ID,
+  DESKTOP_PACKAGE_NAME,
+  DESKTOP_PRODUCT_NAME,
+} from './product-identity.ts'
 
-const BIN_NAME = 'dsh-plugin-desktop'
-const PRODUCT_NAME = 'DSH Desktop'
+const BIN_NAME = DESKTOP_PACKAGE_NAME
+const PRODUCT_NAME = DESKTOP_PRODUCT_NAME
 
 /** Require OS-backed secret storage; Linux's plaintext fallback is not sufficient for a CA key. */
 function desktopLanHttpsPrivateKeyProtector(): DesktopLanHttpsPrivateKeyProtector {
@@ -530,7 +535,7 @@ async function start(): Promise<void> {
     await app.whenReady()
     startupStage = 'shell-environment'
     lifecycleRecorder.transitionStartupStage(startupStage)
-    if (process.platform === 'win32') app.setAppUserModelId('ai.deepseek.dsh.desktop')
+    if (process.platform === 'win32') app.setAppUserModelId(DESKTOP_APP_ID)
     if (app.isPackaged && process.cwd() === '/') process.chdir(app.getPath('home'))
     const shellEnvironmentResolution = await resolveDesktopShellEnvironment({
       environment: process.env,

@@ -22,8 +22,8 @@ Desktop 另外提供两个公开的 Host service：
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
 import { randomUUID } from 'node:crypto'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
 
 export const name = 'example-desktop-plugin'
 export const inject = ['desktopProfiles', 'desktopPnpm']
@@ -96,9 +96,9 @@ export function apply(ctx: Context, config: { profile?: string }): void {
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type {} from 'dsh-plugin-desktop/pnpm'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type {} from 'dsh-plugin-desktop-beta/pnpm'
 
 declare function prepareSandboxProfile(options: {
   readonly sourceProfileDir: string

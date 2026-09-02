@@ -50,7 +50,7 @@ Renderer 通过现有 loopback carrier 接收普通 Web Client module，无法�
 
 ```ts
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import type { DesktopWindowService } from 'dsh-plugin-desktop/client'
+import type { DesktopWindowService } from 'dsh-plugin-desktop-beta/client'
 
 export const inject = ['desktopWindow']
 
@@ -104,15 +104,15 @@ Desktop 会用 `data-dsh-desktop-frame="titlebar"` 标记操作栏，并用 `dat
 import type {
   DesktopCurrentProfile,
   DesktopProfiles,
-} from 'dsh-plugin-desktop/profile-service'
+} from 'dsh-plugin-desktop-beta/profile-service'
 import type {
   DesktopPnpm,
   DesktopPnpmHandle,
   DesktopPnpmOutcome,
-} from 'dsh-plugin-desktop/pnpm'
+} from 'dsh-plugin-desktop-beta/pnpm'
 ```
 
-`dsh-plugin-desktop/profiles` 是 Desktop 自有托盘 consumer，不是 profile service contract。不要从该路径导入 service 类型。
+`dsh-plugin-desktop-beta/profiles` 是 Desktop 自有托盘 consumer，不是 profile service contract。不要从该路径导入 service 类型。
 
 ### `desktopProfiles`
 
@@ -183,9 +183,9 @@ Service 在每个 generation 同时最多启动一个 package operation；已有
 
 | 名称 | 边界 | 面向插件作者的状态 |
 | --- | --- | --- |
-| `desktopProfiles` | 作用于 generation 的 Host service。 | 公开；通过 `dsh-plugin-desktop/profile-service` 获得受支持 contract。 |
-| `desktopPnpm` | 作用于 generation 的 Host service。 | 公开；通过 `dsh-plugin-desktop/pnpm` 获得受支持 contract。 |
-| `desktopWindow` | 作用于 generation 的 Client service。 | 公开；通过 `dsh-plugin-desktop/client` 获得受支持 contract，只包含不可变几何信息。 |
+| `desktopProfiles` | 作用于 generation 的 Host service。 | 公开；通过 `dsh-plugin-desktop-beta/profile-service` 获得受支持 contract。 |
+| `desktopPnpm` | 作用于 generation 的 Host service。 | 公开；通过 `dsh-plugin-desktop-beta/pnpm` 获得受支持 contract。 |
+| `desktopWindow` | 作用于 generation 的 Client service。 | 公开；通过 `dsh-plugin-desktop-beta/client` 获得受支持 contract，只包含不可变几何信息。 |
 | `desktopRuntime` | Launcher 提供的 native adapter，供 Desktop 自有 shell、tray、terminal、profile 与 update row 使用。 | Desktop 内部。第三方插件不得 inject，也不得依赖其 window/tray 方法。 |
 | `desktopPnpmBootstrap` | 提供给 `desktop-pnpm` provider 的已打包绝对路径、被选 profile fact、Electron ABI 值与私有 Node helper。 | Launcher 私有。不得读取、provide、intercept 或声明为 dependency。 |
 | `DesktopProfileServiceBootstrap` | Launcher 注册 `desktopProfiles` 时使用的 constructor input；它不是 Cordis service。 | Launcher 私有实现细节。 |
@@ -200,8 +200,8 @@ Service 在每个 generation 同时最多启动一个 package operation；已有
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type { DesktopPnpmHandle } from 'dsh-plugin-desktop/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type { DesktopPnpmHandle } from 'dsh-plugin-desktop-beta/pnpm'
 
 export const name = 'example-desktop-plugin-manager'
 export const inject = ['desktopProfiles', 'desktopPnpm']
@@ -249,8 +249,8 @@ export function apply(ctx: Context): void {
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
-import type {} from 'dsh-plugin-desktop/profile-service'
-import type {} from 'dsh-plugin-desktop/pnpm'
+import type {} from 'dsh-plugin-desktop-beta/profile-service'
+import type {} from 'dsh-plugin-desktop-beta/pnpm'
 
 export const name = 'cross-environment-plugin-manager'
 export const inject = ['webServer', 'loader']
@@ -292,7 +292,7 @@ export function apply(ctx: Context, config: { profile?: string }): void {
 
 `desktopProfiles` 已存在后，绝不能回退到猜测的 `web` profile。部分缺失或启动失败的 Desktop provider set 属于 Desktop generation failure，不是通过 ambient CLI 修改另一个 profile 的许可。也不要用 `ctx.baseUrl`、settings、Loader inventory 或 launcher 的内部 `cmdlineArgs` 替代 `desktopProfiles.current`。
 
-Type-only import 会从 JavaScript 中消除。跨环境 package 可以把 `dsh-plugin-desktop` 作为编译所需 dev dependency；若发布的 declaration 会暴露这些类型，也可以将其声明为 optional peer。仅为了探测 service，不需要 runtime import。
+Type-only import 会从 JavaScript 中消除。跨环境 package 可以把 `dsh-plugin-desktop-beta` 作为编译所需 dev dependency；若发布的 declaration 会暴露这些类型，也可以将其声明为 optional peer。仅为了探测 service，不需要 runtime import。
 
 ## 最小可运行测试插件
 
@@ -301,8 +301,8 @@ Type-only import 会从 JavaScript 中消除。跨环境 package 可以把 `dsh-
 完整 Profile Loader smoke 会把该 package 复制到临时 profile 的 `node_modules`，以普通 bare-package Loader entry 加载，并在 probe 没有返回激活 profile 或 `run()` 时失败。运行命令：
 
 ```sh
-yarn workspace dsh-plugin-desktop build
-yarn workspace dsh-plugin-desktop verify:profile
+yarn workspace dsh-plugin-desktop-beta build
+yarn workspace dsh-plugin-desktop-beta verify:profile
 ```
 
 该 fixture 位于 `tests/`，不在 npm `files` 列表或 Electron build files 中，因此不会进入生产 archive。
@@ -326,4 +326,4 @@ yarn workspace dsh-plugin-desktop verify:profile
 
 ## 稳定性边界
 
-受支持的插件作者 surface，是本文描述且由 `dsh-plugin-desktop/profile-service`、`dsh-plugin-desktop/pnpm` 与 `dsh-plugin-desktop/client` 导出的 `desktopProfiles`、`desktopPnpm` 和 `desktopWindow` service contract。Launcher bootstrap 值、native adapter、生成 shim、状态文件格式、Loader row 顺序与 Electron 实现细节都可能变化，但不会因此成为第三方 API。Fallback 必须保持显式、限定在生命周期内，并且 headless-safe。
+受支持的插件作者 surface，是本文描述且由 `dsh-plugin-desktop-beta/profile-service`、`dsh-plugin-desktop-beta/pnpm` 与 `dsh-plugin-desktop-beta/client` 导出的 `desktopProfiles`、`desktopPnpm` 和 `desktopWindow` service contract。Launcher bootstrap 值、native adapter、生成 shim、状态文件格式、Loader row 顺序与 Electron 实现细节都可能变化，但不会因此成为第三方 API。Fallback 必须保持显式、限定在生命周期内，并且 headless-safe。

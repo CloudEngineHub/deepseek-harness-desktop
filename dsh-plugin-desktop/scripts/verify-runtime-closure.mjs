@@ -8,7 +8,7 @@ const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
 const result = await verifyRuntimeClosure(manifest, loadInstalledPackage, manifestPath)
 
 if (result.failures.length > 0) {
-  console.error('verify-runtime-closure: required first-party peers are missing from dsh-plugin-desktop dependencies:')
+  console.error('verify-runtime-closure: required first-party peers are missing from dsh-plugin-desktop-beta dependencies:')
   for (const failure of result.failures) console.error(`  ${failure}`)
   process.exit(1)
 }

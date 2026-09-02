@@ -127,6 +127,7 @@ describe('desktop profile composition', {
     expect(desktopBundleList([
       '@deepseek-ai/dsh-base',
       'third-party-one',
+      'dsh-plugin-desktop',
       DESKTOP_PACKAGE_NAME,
       'third-party-two',
     ])).toEqual([
@@ -313,7 +314,7 @@ virtualStoreDirMaxLength: 60
     }))
     expect(inserted).toContainEqual(expect.objectContaining({
       id: 'desktop-webserver',
-      name: 'dsh-plugin-desktop/webserver',
+      name: 'dsh-plugin-desktop-beta/webserver',
       config: { host: '127.0.0.1', port: 43_120 },
     }))
     expect(patches).toContainEqual(expect.objectContaining({
@@ -377,20 +378,20 @@ virtualStoreDirMaxLength: 60
     }))
     expect(rows.map(row => row.id)).not.toContain('desktop-windows-pwsh-sandbox')
     expect(rows.find(row => row.id === 'desktop-terminal')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/terminal',
+      name: 'dsh-plugin-desktop-beta/terminal',
       disabled: { __jsExpr: "process.platform === 'linux'" },
     }))
     expect(rows.find(row => row.id === 'desktop-pnpm')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/pnpm',
+      name: 'dsh-plugin-desktop-beta/pnpm',
     }))
     expect(rows.find(row => row.id === 'desktop-updates')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/updates',
+      name: 'dsh-plugin-desktop-beta/updates',
     }))
     expect(rows.find(row => row.id === 'desktop-notifications')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/notifications',
+      name: 'dsh-plugin-desktop-beta/notifications',
     }))
     expect(rows.find(row => row.id === 'desktop-profiles')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/profiles',
+      name: 'dsh-plugin-desktop-beta/profiles',
     }))
   })
 
@@ -691,7 +692,7 @@ virtualStoreDirMaxLength: 60
       name: 'third-party-layout',
     })
     expect(rows.find(row => row.id === 'desktop-shell')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop',
+      name: 'dsh-plugin-desktop-beta',
       config: expect.objectContaining({ mode: 'compatibility' }),
     }))
   })
@@ -723,7 +724,7 @@ virtualStoreDirMaxLength: 60
       disabled: true,
     }))
     expect(rows.find(row => row.id === 'desktop-webserver')).toEqual(expect.objectContaining({
-      name: 'dsh-plugin-desktop/webserver',
+      name: 'dsh-plugin-desktop-beta/webserver',
       config: { host: '127.0.0.1', port: 43_189 },
     }))
     expect(rows.find(row => row.id === 'web-runtime')).toEqual(expect.objectContaining({
@@ -981,7 +982,7 @@ virtualStoreDirMaxLength: 60
     }))
     expect(rows).toContainEqual(expect.objectContaining({
       id: 'desktop-windows-pwsh-sandbox',
-      name: 'dsh-plugin-desktop/windows-pwsh-sandbox',
+      name: 'dsh-plugin-desktop-beta/windows-pwsh-sandbox',
       disabled: { __jsExpr: "process.platform !== 'win32'" },
       config: { cwd: 'C:\\workspace' },
     }))

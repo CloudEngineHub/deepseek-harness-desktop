@@ -111,15 +111,15 @@ jobs:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
       - run: yarn install --immutable
-      - run: yarn workspace dsh-plugin-desktop check:win-package
+      - run: yarn workspace dsh-plugin-desktop-beta check:win-package
       - name: Build Windows installer
         env:
           DSH_PACKAGE_CHECK_ALREADY_RAN: '1'
-        run: yarn workspace dsh-plugin-desktop dist:win
+        run: yarn workspace dsh-plugin-desktop-beta dist:win
       - name: Build Windows portable archive
         env:
           DSH_PACKAGE_CHECK_ALREADY_RAN: '1'
-        run: yarn workspace dsh-plugin-desktop dist:win-portable
+        run: yarn workspace dsh-plugin-desktop-beta dist:win-portable
 
   # macOS-only universal packaging smoke on a real macOS runner: the signed
   # release is built manually on a credentialed machine, so an unsigned DMG
@@ -147,11 +147,11 @@ jobs:
           path: ${{ steps.yarn-cache.outputs.dir }}
           key: yarn-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
       - run: yarn install --immutable
-      - run: yarn workspace dsh-plugin-desktop check:mac-package
+      - run: yarn workspace dsh-plugin-desktop-beta check:mac-package
       - name: Build macOS smoke artifact
         env:
           DSH_PACKAGE_CHECK_ALREADY_RAN: '1'
-        run: yarn workspace dsh-plugin-desktop dist:mac-smoke
+        run: yarn workspace dsh-plugin-desktop-beta dist:mac-smoke
 
   # Upstream toolchain smoke: the portable-shell scripts must resolve the
   # pinned submodule's own Yarn/pnpm release on Windows.

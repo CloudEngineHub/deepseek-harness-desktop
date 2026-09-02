@@ -78,6 +78,7 @@ import {
   type PersistedWindowsWindowMaterial,
   windowsSupportsMica,
 } from './window-material.ts'
+import { DESKTOP_PRODUCT_NAME } from './product-identity.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'desktop-shell'
@@ -473,7 +474,7 @@ export function apply(ctx: Context, config: Config): void {
         url,
         authenticationUrl: ctx.connection.authenticatedUrl(new URL(url).origin),
         rendererAccessHeader: browserAccess.rendererHeader,
-        productName: 'DSH Desktop',
+        productName: DESKTOP_PRODUCT_NAME,
         windowTitle: 'DeepSeek Harness Desktop',
         iconPath,
         trayIcons,

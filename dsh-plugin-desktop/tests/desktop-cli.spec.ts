@@ -148,7 +148,7 @@ describe('packaged dsh bootstrap', () => {
 
   it('resolves the DSH entry from a pnpm profile with flat package dependencies', () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-desktop-flat-profile-'))
-    const desktopLib = join(root, 'node_modules', 'dsh-plugin-desktop', 'lib')
+    const desktopLib = join(root, 'node_modules', 'dsh-plugin-desktop-beta', 'lib')
     const dshPackage = join(root, 'node_modules', '@deepseek-ai', 'dsh')
     const dshEntry = join(dshPackage, 'lib', 'bin.js')
     const pnpmPackage = join(root, 'node_modules', 'pnpm')
