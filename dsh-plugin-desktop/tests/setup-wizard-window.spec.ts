@@ -52,7 +52,7 @@ const notifications = Object.freeze({
 
 function input(overrides: Partial<DesktopSetupWizardInput> = {}): DesktopSetupWizardInput {
   return {
-    appVersion: '2.0.5-beta.1',
+    appVersion: '2.0.5-beta.2',
     profileName: 'work',
     platform: 'win32',
     micaSupported: true,

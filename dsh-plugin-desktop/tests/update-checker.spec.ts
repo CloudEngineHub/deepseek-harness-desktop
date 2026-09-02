@@ -106,9 +106,9 @@ describe('public Desktop version check', () => {
       [DESKTOP_CURRENT_VERSION_HEADER]: '2.9.9',
       [DESKTOP_INSTALLATION_ID_HEADER]: INSTALLATION_ID,
     })
-    expect(desktopVersionRequestHeaders(INSTALLATION_ID, '2.0.5-beta.1')).toEqual({
+    expect(desktopVersionRequestHeaders(INSTALLATION_ID, '2.0.5-beta.2')).toEqual({
       Accept: 'application/json',
-      [DESKTOP_CURRENT_VERSION_HEADER]: '2.0.5-beta.1',
+      [DESKTOP_CURRENT_VERSION_HEADER]: '2.0.5-beta.2',
       [DESKTOP_INSTALLATION_ID_HEADER]: INSTALLATION_ID,
     })
     expect(desktopVersionRequestHeaders()).toEqual({ Accept: 'application/json' })
@@ -150,11 +150,11 @@ describe('public Desktop version check', () => {
 
   it('lets a Beta installation discover the corresponding stable release', async () => {
     await expect(checkForStableUpdate({
-      currentVersion: '2.0.5-beta.1',
+      currentVersion: '2.0.5-beta.2',
       request: async () => versionResponse('2.0.5'),
     })).resolves.toEqual({
       status: 'update-available',
-      currentVersion: '2.0.5-beta.1',
+      currentVersion: '2.0.5-beta.2',
       latestVersion: '2.0.5',
     })
   })
