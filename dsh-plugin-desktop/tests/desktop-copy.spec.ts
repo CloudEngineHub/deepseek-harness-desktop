@@ -17,12 +17,18 @@ describe('Desktop product copy', () => {
 
   it('separates Recovery Mode from checkpoint rollback', () => {
     const copy = desktopRecoveryCopy('zh')
+    expect(copy.tabs.quick).toBe('快速恢复')
+    expect(copy.tabs.diagnostics).toBe('诊断')
     expect(copy.tabs.rollback).toBe('回滚')
     expect(copy.rollbackCheckpoint).toBe('回滚到此槽位')
     expect(copy.back).toBe('返回')
     expect(copy.confirmRollbackBody('2026/8/25 10:00:00')).toContain('当前 Profile')
     expect(copy.confirmRollbackBody('2026/8/25 10:00:00')).toContain('settings.yaml')
     expect(copy.confirmRollbackBody('2026/8/25 10:00:00')).toContain('DSH home 补丁')
+    expect(copy.safeModeBody).toContain('不读取默认的 ~/.dsh')
+    expect(copy.safeModeBody).toContain('下一次普通启动会自动删除')
+    expect(copy.quickRecoveryBody).toBe('您可以先进入安全模式，使用独立环境排查问题；也可以考虑卸载异常插件，或者直接回滚至上一次正常启动前的配置，或切换到其他 Profile。修改后需要重启才能生效。')
+    expect(copy.profileGuideBody).toBe('Profile 是一套 DSH 运行配置，决定启动时加载哪些插件，不同Profile的插件信息不共享；同一个 DSH Home 下的多个 Profile 仍共享会话和工作区数据。')
   })
 
   it('ships localized native update and failure dialogs', () => {
