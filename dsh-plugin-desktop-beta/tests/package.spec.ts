@@ -110,6 +110,19 @@ describe('published package surface', () => {
     expect(setName).toBeGreaterThan(lock)
   })
 
+  it('keeps Beta Safe Mode out of the normal DSH home and Desktop state', () => {
+    expect(main).toContain('const profileUserDataDir = safeModePaths?.userDataDir ?? desktopUserDataDir')
+    expect(main).toContain('const homeDir = safeModePaths?.homeDir ?? resolveDshHome()')
+    expect(main).toContain('if (safeModePaths !== undefined) process.env.DSH_HOME = homeDir')
+    expect(main).toContain('createDesktopWebProfile(paths.homeDir, DESKTOP_SAFE_MODE_PROFILE_NAME)')
+    expect(main).toContain("join(paths.userDataDir, 'profile-selection', 'state.json')")
+    expect(main).toContain('selectDesktopProfile(')
+    expect(main).toContain('cleanupDesktopSafeModeEnvironment(desktopUserDataDir)')
+    expect(main).toContain('desktopSafeModeRelaunchArguments()')
+    expect(main).toContain("desktopTrayLabel(runtime.locale, 'exitSafeMode')")
+    expect(main).toContain('notifyDesktopSafeModeActive(runtime, electronLogger)')
+  })
+
   it('exposes the Host plugin and desktop-owned client face', () => {
     expect(manifest.exports).toHaveProperty('./client')
     expect(manifest.exports).toHaveProperty('./windows-pwsh-sandbox', {
