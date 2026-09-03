@@ -121,6 +121,12 @@ describe('published package surface', () => {
     expect(main).toContain('desktopSafeModeRelaunchArguments()')
     expect(main).toContain("desktopTrayLabel(runtime.locale, 'exitSafeMode')")
     expect(main).toContain('notifyDesktopSafeModeActive(runtime, electronLogger)')
+    expect(main).toContain('const setupWizardState = safeModePaths === undefined')
+    expect(main).toContain('if (safeModePaths === undefined && desktopSetupWizardRequired(')
+    expect(main).toContain('const safeModeDefaults = DESKTOP_SAFE_MODE_DEFAULTS')
+    expect(main).toContain('updateDesktopSetupWizardSettings(prepared.settingsDocument, safeModeDefaults.settings)')
+    expect(main).toContain('selectDesktopMarketProvider(marketUserDataDir, safeModeDefaults.market)')
+    expect(main).toContain('safeModeDefaults.settings.notifications')
   })
 
   it('exposes the Host plugin and desktop-owned client face', () => {

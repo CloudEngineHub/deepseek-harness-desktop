@@ -11,6 +11,8 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
+import type { DesktopMarketProvider } from './desktop-market.ts'
+import type { DesktopSetupWizardSettings } from './setup-wizard-settings.ts'
 
 const BIN_NAME = 'dsh-plugin-desktop-beta'
 const SAFE_MODE_DIRECTORY = 'safe-mode'
@@ -22,6 +24,28 @@ const MAX_MARKER_BYTES = 4 * 1024
 
 /** Visible Profile identity used throughout the temporary DSH environment. */
 export const DESKTOP_SAFE_MODE_PROFILE_NAME = 'desktop-safe-mode'
+
+/** Fixed, disposable preferences used without showing first-run Setup. */
+export const DESKTOP_SAFE_MODE_DEFAULTS: Readonly<{
+  market: DesktopMarketProvider
+  settings: DesktopSetupWizardSettings
+}> = Object.freeze({
+  market: 'dsh-market',
+  settings: Object.freeze({
+    mode: 'compatibility',
+    macosMaterial: 'off',
+    windowsMaterial: 'off',
+    openBrowser: false,
+    networkExposure: 'loopback',
+    notifications: Object.freeze({
+      enabled: true,
+      notifyOnTurnCompletion: true,
+      notifyOnTurnFailure: true,
+      notifyOnJobCompletion: true,
+      notifyOnJobFailure: true,
+    }),
+  }),
+})
 
 export interface DesktopSafeModePaths {
   /** Root removed on the first launch that does not carry the Safe Mode argument. */

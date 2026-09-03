@@ -172,6 +172,7 @@ import {
 } from './relaunch-arguments.ts'
 import {
   cleanupDesktopSafeModeEnvironment,
+  DESKTOP_SAFE_MODE_DEFAULTS,
   DESKTOP_SAFE_MODE_PROFILE_NAME,
   ensureDesktopSafeModeEnvironment,
   resetDesktopSafeModeEnvironment,
@@ -961,7 +962,30 @@ async function start(): Promise<void> {
       marketSelection,
       preparationHooks,
     )
-    if (profilePreferences === undefined) {
+    if (safeModePaths !== undefined) {
+      const safeModeDefaults = DESKTOP_SAFE_MODE_DEFAULTS
+      await updateDesktopSetupWizardSettings(prepared.settingsDocument, safeModeDefaults.settings)
+      await selectDesktopMarketProvider(marketUserDataDir, safeModeDefaults.market)
+      marketSelection = readDesktopMarketStateForUserData(marketUserDataDir)
+      profilePreferences = await writeDesktopProfilePreferences(
+        marketUserDataDir,
+        prepared.profile.dir,
+        desktopProfilePreferencesFromSettings(
+          safeModeDefaults.settings,
+          safeModeDefaults.settings.notifications,
+          safeModeDefaults.market,
+        ),
+      )
+      prepared = prepareDesktopProfile(
+        process.env.DSH_TELEMETRY_DISABLED,
+        homeDir,
+        process.platform,
+        activeProfileName,
+        pluginManagementStatePath,
+        marketSelection,
+        preparationHooks,
+      )
+    } else if (profilePreferences === undefined) {
       const browserAccessMigrated = await migrateDesktopBrowserAccessSettings(prepared.settingsDocument)
       let windowMaterialMigrated = false
       try {
@@ -1020,8 +1044,13 @@ async function start(): Promise<void> {
         preparationHooks,
       )
     }
-    const setupWizardState = readDesktopSetupWizardState(marketUserDataDir, prepared.profile.dir)
-    if (desktopSetupWizardRequired(setupWizardState, setupWizardVersions)) {
+    // Safe Mode must reach the working surface with shipped defaults. Its
+    // disposable Desktop state deliberately has no Setup marker, so reading
+    // it as an ordinary Profile would incorrectly open first-run Setup.
+    const setupWizardState = safeModePaths === undefined
+      ? readDesktopSetupWizardState(marketUserDataDir, prepared.profile.dir)
+      : undefined
+    if (safeModePaths === undefined && desktopSetupWizardRequired(setupWizardState, setupWizardVersions)) {
       const setupSettings = readDesktopSetupWizardSettings(prepared.settingsDocument)
       setupWizardWindow = new DesktopSetupWizardWindow({
         locale: desktopLocaleFromLanguageTag(app.getLocale()),

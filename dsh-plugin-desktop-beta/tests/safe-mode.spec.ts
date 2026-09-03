@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   cleanupDesktopSafeModeEnvironment,
+  DESKTOP_SAFE_MODE_DEFAULTS,
   DESKTOP_SAFE_MODE_PROFILE_NAME,
   desktopSafeModePaths,
   ensureDesktopSafeModeEnvironment,
@@ -26,6 +27,26 @@ describe('Desktop Safe Mode environment', () => {
 
   it('uses a visible Safe Mode label for its disposable Profile', () => {
     expect(DESKTOP_SAFE_MODE_PROFILE_NAME).toBe('desktop-safe-mode')
+  })
+
+  it('uses fixed non-interactive defaults for the disposable Profile', () => {
+    expect(DESKTOP_SAFE_MODE_DEFAULTS).toEqual({
+      market: 'dsh-market',
+      settings: {
+        mode: 'compatibility',
+        macosMaterial: 'off',
+        windowsMaterial: 'off',
+        openBrowser: false,
+        networkExposure: 'loopback',
+        notifications: {
+          enabled: true,
+          notifyOnTurnCompletion: true,
+          notifyOnTurnFailure: true,
+          notifyOnJobCompletion: true,
+          notifyOnJobFailure: true,
+        },
+      },
+    })
   })
 
   it('creates an isolated DSH home and Desktop state outside the normal Harness home', async () => {
