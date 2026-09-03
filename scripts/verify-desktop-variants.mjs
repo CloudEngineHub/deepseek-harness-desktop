@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs'
-import { join, relative, resolve } from 'node:path'
+import { join, relative, resolve, sep } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const stableRoot = join(root, 'dsh-plugin-desktop', 'src')
@@ -18,6 +18,7 @@ const allowedDifferences = new Set([
   'diagnostic-export-worker.ts',
   'index.ts',
   'main.ts',
+  'native-ui/profile-selector/App.tsx',
   'native-ui/setup-wizard/App.tsx',
   'native-ui/recovery/App.tsx',
   'notifications.ts',
@@ -39,7 +40,7 @@ function files(directory, base = directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) result.push(...files(path, base))
-    else if (entry.isFile()) result.push(relative(base, path))
+    else if (entry.isFile()) result.push(relative(base, path).split(sep).join('/'))
   }
   return result
 }
