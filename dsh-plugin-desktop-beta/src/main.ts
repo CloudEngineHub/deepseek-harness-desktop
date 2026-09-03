@@ -176,6 +176,7 @@ import {
   DESKTOP_SAFE_MODE_PROFILE_NAME,
   ensureDesktopSafeModeEnvironment,
   resetDesktopSafeModeEnvironment,
+  desktopSafeModePaths,
   type DesktopSafeModePaths,
 } from './safe-mode.ts'
 import {
@@ -407,6 +408,8 @@ async function start(): Promise<void> {
   })
   const recoveryModeRequested = desktopRecoveryModeRequested()
   const safeModeRequested = desktopSafeModeRequested()
+  const inheritedDshHome = process.env.DSH_HOME
+  const safeModeHomeDir = desktopSafeModePaths(desktopUserDataDir).homeDir
   try {
     logSink = new LogFileSink(join(app.getPath('userData'), 'logs'), {
       maxFileBytes: 10 * 1024 * 1024,
@@ -424,6 +427,7 @@ async function start(): Promise<void> {
   if (safeModeRequested) {
     safeModePaths = ensureDesktopSafeModeEnvironment(desktopUserDataDir)
   } else {
+    if (process.env.DSH_HOME === safeModeHomeDir) delete process.env.DSH_HOME
     try {
       cleanupDesktopSafeModeEnvironment(desktopUserDataDir)
     } catch (cause) {
@@ -482,6 +486,15 @@ async function start(): Promise<void> {
       removeShutdownRequests?.()
       removeUncaughtExceptionLogging?.()
       removeChildProcessLogging?.()
+      if (safeModePaths !== undefined) {
+        if (inheritedDshHome === undefined) delete process.env.DSH_HOME
+        else process.env.DSH_HOME = inheritedDshHome
+        try {
+          cleanupDesktopSafeModeEnvironment(desktopUserDataDir)
+        } catch (cause) {
+          electronLogger.error(`${BIN_NAME}: failed to remove the Safe Mode environment: ${cause instanceof Error ? cause.message : String(cause)}`)
+        }
+      }
       try {
         desktopRun?.markClean()
       } catch (cause) {
@@ -1488,7 +1501,9 @@ async function start(): Promise<void> {
     lifecycleRecorder.completeStartup(startupStage, rendererReport)
     notifySkippedOptionalEntries(runtime, electronLogger, prepared.skippedOptionalEntries)
     notifyWindowsVolumeConcerns(runtime, electronLogger, windowsVolumeConcerns)
-    if (safeModePaths !== undefined) notifyDesktopSafeModeActive(runtime, electronLogger)
+    if (safeModePaths !== undefined && DESKTOP_SAFE_MODE_DEFAULTS.settings.notifications.enabled) {
+      notifyDesktopSafeModeActive(runtime, electronLogger)
+    }
     if (sessionProjectionCacheRecovery !== undefined) {
       notifySessionProjectionCacheRecovery(runtime, electronLogger, sessionProjectionCacheRecovery)
     }

@@ -31,7 +31,7 @@ describe('Desktop Safe Mode environment', () => {
 
   it('uses fixed non-interactive defaults for the disposable Profile', () => {
     expect(DESKTOP_SAFE_MODE_DEFAULTS).toEqual({
-      market: 'dsh-market',
+      market: 'disabled',
       settings: {
         mode: 'compatibility',
         macosMaterial: 'off',
@@ -39,11 +39,11 @@ describe('Desktop Safe Mode environment', () => {
         openBrowser: false,
         networkExposure: 'loopback',
         notifications: {
-          enabled: true,
-          notifyOnTurnCompletion: true,
-          notifyOnTurnFailure: true,
-          notifyOnJobCompletion: true,
-          notifyOnJobFailure: true,
+          enabled: false,
+          notifyOnTurnCompletion: false,
+          notifyOnTurnFailure: false,
+          notifyOnJobCompletion: false,
+          notifyOnJobFailure: false,
         },
       },
     })
@@ -62,7 +62,7 @@ describe('Desktop Safe Mode environment', () => {
     })
   })
 
-  it('preserves one active Safe Mode generation but resets an invalid environment', async () => {
+  it('adopts one prepared Safe Mode generation but resets an invalid environment', async () => {
     const root = await userData()
     const paths = resetDesktopSafeModeEnvironment(root)
     writeFileSync(join(paths.homeDir, 'session-data'), 'keep while active')
