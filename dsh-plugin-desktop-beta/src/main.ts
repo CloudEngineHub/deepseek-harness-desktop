@@ -695,37 +695,10 @@ async function start(): Promise<void> {
     const profileDirectoriesBeforeStartup = new Set(
       listDesktopProfiles(homeDir).map(profile => profile.dir),
     )
-    const profileStartup = beginDesktopProfileStartup(selectionStatePath, homeDir)
-    const activeProfileName = profileStartup.profileName
-    const activeProfileDir = resolveProfileDir(activeProfileName, homeDir)
-    if (!profileDirectoriesBeforeStartup.has(activeProfileDir)) {
-      clearDesktopProfileUsageHistory(releaseUserDataLocations, activeProfileDir)
-    }
-    // Recovery can open before Profile composition and Host boot. Fix the
-    // launcher-owned terminal identity as soon as Profile selection succeeds
-    // so every recovery entry path exposes the same terminal action.
-    runtime.configureTerminal({
-      profileName: activeProfileName,
-      profileDir: activeProfileDir,
-      homeDir,
-    })
-    recoveryTerminalAvailable = true
+    // Keep Profile recovery usable when the persisted selection no longer exists.
     const locale = desktopLocaleFromLanguageTag(app.getLocale())
-    if (safeModePaths !== undefined) {
-      const safeModeTray = runtime.registerTrayItem({
-        group: 'status',
-        order: -100,
-        label: () => desktopTrayLabel(runtime.locale, 'exitSafeMode'),
-        invoke: async () => {
-          if (restartRequested) return
-          restartRequested = true
-          nativeExit.requestRelaunch(desktopDefaultRelaunchArguments())
-          await shutdown.request(0)
-        },
-      })
-      generation.own(() => { safeModeTray.dispose() })
-    }
     const recoveryProfileToken = randomUUID()
+    let activeProfileName = readDesktopProfileState(selectionStatePath).active
     let expectedRecoveryProfileName = activeProfileName
     const openStartupProfileCreator = async (): Promise<void> => {
       await new Promise<void>(resolve => {
@@ -781,6 +754,36 @@ async function start(): Promise<void> {
         expectedRecoveryProfileName = name
       },
       openCreator: openStartupProfileCreator,
+    }
+    const profileStartup = beginDesktopProfileStartup(selectionStatePath, homeDir)
+    activeProfileName = profileStartup.profileName
+    expectedRecoveryProfileName = activeProfileName
+    const activeProfileDir = resolveProfileDir(activeProfileName, homeDir)
+    if (!profileDirectoriesBeforeStartup.has(activeProfileDir)) {
+      clearDesktopProfileUsageHistory(releaseUserDataLocations, activeProfileDir)
+    }
+    // Recovery can open before Profile composition and Host boot. Fix the
+    // launcher-owned terminal identity as soon as Profile selection succeeds
+    // so every recovery entry path exposes the same terminal action.
+    runtime.configureTerminal({
+      profileName: activeProfileName,
+      profileDir: activeProfileDir,
+      homeDir,
+    })
+    recoveryTerminalAvailable = true
+    if (safeModePaths !== undefined) {
+      const safeModeTray = runtime.registerTrayItem({
+        group: 'status',
+        order: -100,
+        label: () => desktopTrayLabel(runtime.locale, 'exitSafeMode'),
+        invoke: async () => {
+          if (restartRequested) return
+          restartRequested = true
+          nativeExit.requestRelaunch(desktopDefaultRelaunchArguments())
+          await shutdown.request(0)
+        },
+      })
+      generation.own(() => { safeModeTray.dispose() })
     }
     const openCompatibilityProfileSelector = async (): Promise<'restart' | 'cancel' | 'unavailable'> => {
       const profileActions = startupRecoveryProfileActions

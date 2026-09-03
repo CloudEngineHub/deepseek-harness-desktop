@@ -633,6 +633,8 @@ describe('published package surface', () => {
     const windows = [...main.matchAll(/await openStartupRecoveryWindow\(/gu)]
       .map(match => match.index)
     const requested = main.indexOf('if (recoveryModeRequested)')
+    const beginProfile = main.indexOf('const profileStartup = beginDesktopProfileStartup(')
+    const profileActions = main.indexOf('startupRecoveryProfileActions = {')
     const prepare = main.indexOf('let prepared = prepareDesktopProfile(')
     const quiesce = main.indexOf('const recoveryActionsSafe = await generation.quiesceForRecovery()')
     const configureTerminal = main.indexOf('runtime.configureTerminal({')
@@ -642,6 +644,8 @@ describe('published package surface', () => {
     expect(windows).toHaveLength(2)
     expect(compatibilitySelector).toBeGreaterThanOrEqual(0)
     expect(compatibilitySelector).toBeLessThan(requested)
+    expect(profileActions).toBeGreaterThanOrEqual(0)
+    expect(profileActions).toBeLessThan(beginProfile)
     expect(windows[0]).toBeGreaterThan(requested)
     expect(windows[0]).toBeLessThan(prepare)
     expect(configureTerminal).toBeGreaterThanOrEqual(0)
