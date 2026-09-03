@@ -171,7 +171,7 @@ describe('DesktopDialogWindow', () => {
       type: 'warning',
       title: 'Profile compatibility warning',
       message: 'Current Profile “work” was used by DSH Desktop Beta.',
-      detail: 'Previous DSH: 0.1.2-alpha.4\nCurrent DSH: 0.1.1-rc.2',
+      detail: 'Previous DSH: 0.1.2-alpha.5\nCurrent DSH: 0.1.1-rc.2',
       advisory: 'Warning: DSH version differences may make plugins unavailable.',
       presentation: 'profile-compatibility',
       buttons: ['Switch Profile', 'Use Anyway', 'Quit'],

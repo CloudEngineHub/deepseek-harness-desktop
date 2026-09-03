@@ -218,11 +218,11 @@ describe('published package surface', () => {
     }
   })
 
-  it('keeps stable RC2 and Beta Alpha4 runtime resolutions isolated', () => {
+  it('keeps stable RC2 and Beta Alpha5 runtime resolutions isolated', () => {
     const dshResolutions = Object.entries(workspaceManifest.resolutions ?? {})
       .filter(([selector]) => selector === '@deepseek-ai/dsh' || selector.startsWith('@deepseek-ai/dsh-'))
     const stableResolutions = dshResolutions.filter(([selector]) => selector.includes('0.1.1-rc.2'))
-    const betaResolutions = dshResolutions.filter(([selector]) => selector.includes('0.1.2-alpha.4'))
+    const betaResolutions = dshResolutions.filter(([selector]) => selector.includes('0.1.2-alpha.5'))
 
     expect(stableResolutions.length).toBeGreaterThan(0)
     expect(betaResolutions.length).toBeGreaterThan(0)
@@ -230,7 +230,7 @@ describe('published package surface', () => {
       expect(selector).not.toContain('0.1.2-alpha.1')
       expect(String(resolution)).not.toContain('0.1.2-alpha.1')
       if (selector.includes('0.1.1-rc.2')) expect(String(resolution)).toContain('0.1.1-rc.2')
-      if (selector.includes('0.1.2-alpha.4')) expect(String(resolution)).toContain('0.1.2-alpha.4')
+      if (selector.includes('0.1.2-alpha.5')) expect(String(resolution)).toContain('0.1.2-alpha.5')
     }
   })
 
