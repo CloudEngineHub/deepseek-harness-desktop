@@ -70,7 +70,7 @@ const dshResolution = (name: string): unknown =>
 describe('published package surface', () => {
   it('keeps the private workspace version-neutral and versions the Beta package', () => {
     expect(workspaceManifest.version).toBeUndefined()
-    expect(manifest.version).toBe('2.0.6-beta.1')
+    expect(manifest.version).toBe('2.0.5-beta.1')
   })
 
   it('runs desktop and community market typechecks from the root command', () => {
@@ -746,7 +746,7 @@ describe('published package surface', () => {
 
   it('fixes the installed application identity', () => {
     expect(workspaceManifest.version).toBeUndefined()
-    expect(manifest.version).toBe('2.0.6-beta.1')
+    expect(manifest.version).toBe('2.0.5-beta.1')
     expect(manifest.name).toBe('dsh-plugin-desktop-beta')
     expect(manifest.bin).toEqual({
       'dsh-desktop-beta': 'lib/bin.js',
@@ -932,12 +932,12 @@ describe('published package surface', () => {
     }
   })
 
-  it('keeps the iOS Default source icon unmodified', () => {
+  it('keeps the fixed inverted Beta source icon', () => {
     const digest = createHash('sha256')
       .update(readFileSync(new URL('build/app-icon.png', packageRoot)))
       .digest('hex')
 
-    expect(digest).toBe('315fbc6e57ff1f34894f21f66fb7f9f26deccf78333c71fad21a6cec64e7de80')
+    expect(digest).toBe('b661d0982f47b5a35a7e8c3524a7aa6a18e044eb64d2e480e01875b82dd2be7f')
   })
 
   it('generates a centered macOS icon with a 100-pixel visual inset', async () => {
