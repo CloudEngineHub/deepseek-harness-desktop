@@ -12773,6 +12773,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch::locator=deepseek-harness-desktop%40workspace%3A.":
+  version: 11.8.0
+  resolution: "pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch::version=11.8.0&hash=13eaf9&locator=deepseek-harness-desktop%40workspace%3A."
+  dependencies:
+    node-gyp: "npm:latest"
+  bin:
+    pn: bin/pnpm.mjs
+    pnpm: bin/pnpm.mjs
+    pnpx: bin/pnpx.mjs
+    pnx: bin/pnpx.mjs
+  checksum: 10c0/b1015c7aa081daf65d4ad34f3baddd80fca6a97ac0e23d5733f84dc648cde34092294651855b860d98bbf77713ddb75e78bf7869b46e29bcb5964d2df8ebcece
+  languageName: node
+  linkType: hard
+
 "postcss-selector-parser@npm:^7.1.0":
   version: 7.1.5
   resolution: "postcss-selector-parser@npm:7.1.5"

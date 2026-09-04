@@ -1009,6 +1009,28 @@ describe('published package surface', () => {
     expect(installedPnpm.version).toBe('11.8.0')
   })
 
+  it('patches packaged pnpm to disable non-positive and invalid release-age policies', () => {
+    const patchPath = './patches/pnpm@11.8.0.patch'
+    const patchResolution = `patch:pnpm@npm%3A11.8.0#${patchPath}`
+    const lockfile = readFileSync(new URL('yarn.lock', workspaceRoot), 'utf8')
+    const patch = readFileSync(new URL(patchPath, workspaceRoot), 'utf8')
+    const workspaceRequire = createRequire(new URL('package.json', packageRoot))
+    const pnpmManifest = workspaceRequire.resolve('pnpm')
+    const installedRuntime = readFileSync(join(dirname(pnpmManifest), 'dist/pnpm.mjs'), 'utf8')
+
+    expect(workspaceManifest.resolutions).toMatchObject({
+      'pnpm@npm:11.8.0': patchResolution,
+    })
+    expect(lockfile).toContain('pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch')
+    for (const source of [patch, installedRuntime]) {
+      expect(source).toContain('const minimumReleaseAge = Number(opts3.minimumReleaseAge);')
+      expect(source).toContain('Number.isFinite(minimumReleaseAge) && minimumReleaseAge > 0')
+      expect(source).toContain('const configuredMinimumReleaseAge = Number(opts3.minimumReleaseAge);')
+      expect(source).toContain('!Number.isFinite(ts) || !Number.isFinite(cutoff)')
+    }
+    expect(installedRuntime).not.toContain('const ageCheckActive = Boolean(opts3.minimumReleaseAge);')
+  })
+
   it('packages the native-compiled Koffi Windows runtime', () => {
     const lockfile = readFileSync(new URL('yarn.lock', workspaceRoot), 'utf8')
 
