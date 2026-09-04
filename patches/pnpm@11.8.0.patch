@@ -12,8 +12,7 @@ diff --git a/dist/pnpm.mjs b/dist/pnpm.mjs
      publishedByExclude: opts3.minimumReleaseAgeExclude ? createPackageVersionPolicyOrThrow(opts3.minimumReleaseAgeExclude, "minimumReleaseAgeExclude") : void 0
    };
  }
-@@ -64263,9 +64264,11 @@ var init_fetchFullMetadataCached = __esm({
- 
+@@ -64264,8 +64265,10 @@ var init_fetchFullMetadataCached = __esm({
  // ../resolving/npm-resolver/lib/createNpmResolutionVerifier.js
  function createNpmResolutionVerifier(opts3) {
 -  const ageCheckActive = Boolean(opts3.minimumReleaseAge);

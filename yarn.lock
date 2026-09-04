@@ -12775,7 +12775,7 @@ __metadata:
 
 "pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch::locator=deepseek-harness-desktop%40workspace%3A.":
   version: 11.8.0
-  resolution: "pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch::version=11.8.0&hash=bbe022&locator=deepseek-harness-desktop%40workspace%3A."
+  resolution: "pnpm@patch:pnpm@npm%3A11.8.0#./patches/pnpm@11.8.0.patch::version=11.8.0&hash=13eaf9&locator=deepseek-harness-desktop%40workspace%3A."
   dependencies:
     node-gyp: "npm:latest"
   bin:
