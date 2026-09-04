@@ -1,6 +1,6 @@
 # Agent Note: Desktop client layout ownership
 
-Status: proposed
+Status: implemented
 
 English | [中文](2026-09-04-desktop-client-layout-ownership.zh.md)
 
@@ -68,9 +68,11 @@ For every Client shell apply:
 4. No branch continues with Desktop mode markers or frame chrome over a foreign layout.
 5. Conflict behavior does not depend on Cordis exception wording.
 
-## Verification plan
+## Verification
 
-Client tests will cover effect-scoped disposal, a free layout, an already occupied layout, and unrelated registration failures. Shell tests will verify that Advanced and Extended fail before installing partial state when ownership is unavailable. Profile tests will continue to prove that Advanced and Extended disable the official layout while Compatibility preserves profile composition. Stable and Beta packages will receive the same change, followed by focused tests, typecheck, build, architecture checks, and bilingual-document checks.
+Client tests cover effect-scoped disposal, a free layout, an already occupied layout, and unrelated registration failures. Shell tests verify that Advanced and Extended fail before installing partial state when ownership is unavailable. Profile tests continue to prove that Advanced and Extended disable the official layout while Compatibility preserves profile composition.
+
+The focused Client, shell, and profile suites passed in both packages (`69 passed` each). Root typecheck and build passed, as did the architecture and bilingual-document checks. The full Stable suite completed with `1013 passed`, `12 skipped`, and one unrelated failure; Beta completed with `1033 passed`, `12 skipped`, and the same failure. In both packages, `recovery-plugin-uninstall.spec.ts` exits with code 127 because its child process cannot find pnpm. The variant check still reports the existing undeclared line-ending drift in `client/assets.d.ts`, `client/theme-presenter.ts`, and `tray-icons.ts`; none is changed here.
 
 ## Consequences
 

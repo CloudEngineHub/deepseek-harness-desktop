@@ -1,6 +1,6 @@
 # Agent Note：Desktop Client layout 所有权
 
-状态：提议
+状态：已实现
 
 [English](2026-09-04-desktop-client-layout-ownership.md) | 中文
 
@@ -68,9 +68,11 @@ flowchart LR
 4. 不再有 Desktop mode marker 或 frame chrome 覆盖外部 layout 的分支。
 5. 冲突行为不依赖 Cordis 异常文案。
 
-## 验证计划
+## 验证
 
-Client 测试会覆盖 Fiber-scoped disposal、空闲 layout、已占用 layout 和无关注册失败。Shell 测试会验证 Advanced 和 Extended 在无法取得所有权时，先于任何部分状态安装而失败。Profile 测试继续证明 Advanced 和 Extended 会禁用官方 layout，Compatibility 则保留 profile composition。Stable 和 Beta package 同步修改，随后运行定点测试、typecheck、build、architecture 检查和双语文档检查。
+Client 测试覆盖 Fiber-scoped disposal、空闲 layout、已占用 layout 和无关注册失败。Shell 测试验证 Advanced 和 Extended 在无法取得所有权时，先于任何部分状态安装而失败。Profile 测试继续证明 Advanced 和 Extended 会禁用官方 layout，Compatibility 则保留 profile composition。
+
+两套 package 的 Client、shell 和 profile 定点测试均通过（各 `69 passed`）。根目录 typecheck 和 build 通过，architecture 与双语文档检查也通过。Stable 全量测试结果为 `1013 passed`、`12 skipped` 和 1 个无关失败；Beta 为 `1033 passed`、`12 skipped` 和同一个失败。两套 package 都是 `recovery-plugin-uninstall.spec.ts` 的子进程找不到 pnpm，因此以 127 退出。Variant 检查仍会报告已有且未声明的换行差异：`client/assets.d.ts`、`client/theme-presenter.ts` 和 `tray-icons.ts`；本次没有修改这些文件。
 
 ## 后果
 
