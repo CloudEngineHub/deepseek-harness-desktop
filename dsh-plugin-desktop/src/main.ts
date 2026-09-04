@@ -1382,9 +1382,6 @@ async function start(): Promise<void> {
         )
         hostCtx.provide('desktopSettingsController', new DesktopSettingsController({
           profiles: hostCtx.desktopProfiles,
-          persistProfileSelection: name => {
-            selectDesktopProfile(selectionStatePath, homeDir, name)
-          },
           readMarket,
           readWeb: () => {
             const lan = lanHttps.snapshot()

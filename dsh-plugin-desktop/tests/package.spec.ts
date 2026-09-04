@@ -460,6 +460,7 @@ describe('published package surface', () => {
     expect(list).toBeGreaterThan(create)
     expect(persist).toBeGreaterThan(list)
     expect(restart).toBeGreaterThan(persist)
+    expect(main).not.toContain('persistProfileSelection')
   })
 
   it('wires local crash evidence before Electron becomes ready', () => {
