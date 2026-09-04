@@ -1,6 +1,6 @@
 # Agent Note：Desktop 本地窗口安全策略
 
-状态：已接受，尚未实现
+Status: implemented
 
 [English](2026-09-04-desktop-local-window-security-policy.md) | 中文
 
@@ -84,13 +84,9 @@ flowchart LR
 - 各窗口的 frame、尺寸、父子关系、显示与销毁行为不变。
 - 不新增 preload、IPC 或持久化 session。
 
-## 验证要求
+## 验证
 
-- policy module 测试固定全部安全选项，并验证 popup 与 WebView attach 被拒绝；
-- 五类本地窗口都通过该 module 构造；
-- Profile 创建窗口获得 `dsh-profile-create` partition 和 WebView attach 拒绝；
-- 原生对话框仍能启用 preferred-size mode；
-- 现有 action parser、窗口生命周期和平台显示测试继续通过。
+Stable 和 Beta 的测试固定全部安全选项，验证 popup 与 WebView attach 被拒绝，并拒绝空、持久化或非产品 partition。结构测试要求五类本地窗口都通过该 module 构造。现有测试继续覆盖 Profile 创建的专用 partition、原生对话框的 preferred-size mode、各 action parser、窗口生命周期和平台显示行为。
 
 ## 后果
 

@@ -1,6 +1,6 @@
 # Agent Note: Desktop local-window security policy
 
-Status: accepted, not implemented
+Status: implemented
 
 English | [中文](2026-09-04-desktop-local-window-security-policy.zh.md)
 
@@ -84,13 +84,9 @@ flowchart LR
 - Frame, dimensions, parent relationships, reveal, and disposal behavior stay with each window.
 - No preload, IPC, or persistent session is added.
 
-## Verification requirements
+## Verification
 
-- policy module tests fix every security option and verify popup and WebView attach denial;
-- all five local window types construct through the module;
-- Profile creation receives the `dsh-profile-create` partition and WebView attach denial;
-- native dialogs retain preferred-size mode;
-- existing action parser, lifecycle, and platform reveal tests continue to pass.
+Stable and Beta tests fix every security option, verify popup and WebView attach denial, and reject empty, persistent, or non-product partitions. A source-structure test requires all five local window types to construct through the module. Existing tests continue to cover the Profile creation partition, native-dialog preferred-size mode, each action parser, window lifecycle, and platform reveal behavior.
 
 ## Consequences
 
