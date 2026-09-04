@@ -463,6 +463,20 @@ describe('published package surface', () => {
     expect(main).not.toContain('persistProfileSelection')
   })
 
+  it('constructs every local HTML window through the shared security policy', () => {
+    for (const filename of [
+      'desktop-dialog-window.ts',
+      'profile-create-window.ts',
+      'profile-selection-window.ts',
+      'setup-wizard-window.ts',
+      'startup-recovery-window.ts',
+    ]) {
+      const source = readFileSync(new URL(`src/${filename}`, packageRoot), 'utf8')
+      expect(source, filename).toContain('createDesktopLocalWindow({')
+      expect(source, filename).not.toContain('new BrowserWindow({')
+    }
+  })
+
   it('wires local crash evidence before Electron becomes ready', () => {
     const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
     const startCrashReporter = main.indexOf('startDesktopCrashReporting(crashReporter')
