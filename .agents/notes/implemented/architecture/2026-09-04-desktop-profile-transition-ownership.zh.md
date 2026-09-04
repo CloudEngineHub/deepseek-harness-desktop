@@ -1,6 +1,6 @@
 # Agent Note：Desktop Profile 切换所有权
 
-状态：已接受，尚未实现
+Status: implemented
 
 [English](2026-09-04-desktop-profile-transition-ownership.md) | 中文
 
@@ -83,16 +83,17 @@ flowchart LR
 - Profile 发现规则、Profile 创建、偏好清理和目录 staging 删除保持不变。
 - Market 选择仍由它自己的持久化与重启路径负责。
 
-## 验证要求
+## 验证
 
-实现至少覆盖以下回归测试：
+Stable 和 Beta 的回归测试覆盖：
 
 - 两个不同目标并发选择时，只有第一个成功持久化的目标被接受；
 - 设置页持久化后、响应结束前，重启尚未请求；
 - 已持久化但尚未重启的目标不能删除；
 - 持久化期间的同目标删除不能穿过 Profile module；
 - 其他非当前 Profile 仍可删除；
-- Profile 选择的设置页入口不再持有原始状态写入 capability。
+- Profile 选择的设置页入口不再持有原始状态写入 capability；
+- 响应结束后的异步重启失败会交给现有错误报告路径。
 
 ## 后果
 

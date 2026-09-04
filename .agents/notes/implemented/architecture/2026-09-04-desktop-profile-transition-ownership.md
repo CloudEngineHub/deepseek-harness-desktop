@@ -1,6 +1,6 @@
 # Agent Note: Desktop Profile transition ownership
 
-Status: accepted, not implemented
+Status: implemented
 
 English | [中文](2026-09-04-desktop-profile-transition-ownership.zh.md)
 
@@ -83,16 +83,17 @@ flowchart LR
 - Profile discovery, Profile creation, preference cleanup, and staged directory deletion remain unchanged.
 - Market selection keeps its own persistence and restart path.
 
-## Verification requirements
+## Verification
 
-The implementation must at least cover these regressions:
+Stable and Beta regression tests cover:
 
 - with two different concurrent targets, only the first successfully persisted target is accepted;
 - after settings persistence and before response completion, restart has not been requested;
 - a persisted target awaiting restart cannot be deleted;
 - deletion of the same target cannot cross the Profile module while persistence is in flight;
 - another inactive Profile remains deletable;
-- the settings Profile selection entry no longer holds a raw state-writing capability.
+- the settings Profile selection entry no longer holds a raw state-writing capability;
+- asynchronous restart failure after the response enters the existing error-reporting path.
 
 ## Consequences
 
