@@ -2,9 +2,11 @@ diff --git a/fs-ext.js b/fs-ext.js
 --- a/fs-ext.js
 +++ b/fs-ext.js
 @@ -19,7 +19,17 @@
- 
+-
++
  "use strict";
- 
+-
++
 -var binding = require('./build/Release/fs_ext.node');
 +var bindingPath = './build/Release/fs_ext.node';
 +
@@ -17,6 +19,7 @@ diff --git a/fs-ext.js b/fs-ext.js
 +}
 +
 +var binding = require(bindingPath);
- 
+-
++
  // Used by flock
  function stringToFlockFlags(flag) {
