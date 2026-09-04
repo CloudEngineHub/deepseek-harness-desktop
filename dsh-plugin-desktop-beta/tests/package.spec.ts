@@ -270,6 +270,27 @@ describe('published package surface', () => {
     }
   })
 
+  it('keeps wide Markdown table scrollbars visible without hover', () => {
+    const patchPath = './patches/dsh-client-ui-primitives@0.1.2-rc.1.patch'
+    expect(dshResolution('@deepseek-ai/dsh-client-ui-primitives')).toContain(patchPath)
+    const patch = readFileSync(new URL(patchPath, workspaceRoot), 'utf8')
+    const installedStyles = readFileSync(new URL(
+      'node_modules/@deepseek-ai/dsh-client-ui-primitives/lib/markdown/MarkdownText.module.css',
+      packageRoot,
+    ), 'utf8')
+    for (const styles of [patch, installedStyles]) {
+      expect(styles).toContain('overflow-x: auto;')
+      expect(styles).toContain('scrollbar-width: thin;')
+      expect(styles).toContain('::-webkit-scrollbar-thumb')
+      expect(styles).toContain('height: 8px;')
+      expect(styles).toContain('background: var(--dsw-alias-label-tertiary, #9098a3);')
+    }
+    expect(installedStyles).not.toContain('overflow-x: hidden;')
+    expect(installedStyles).not.toMatch(
+      /\.tableScroll:global\(\.md-table-wide\):hover,[\s\S]*?overflow-x: auto;/u,
+    )
+  })
+
   it('retains the pre-alpha.2 settings helpers used by profile plugins', () => {
     const patchPath = './patches/dsh-settings@0.1.2-rc.1.patch'
     expect(dshResolution('@deepseek-ai/dsh-settings')).toContain(patchPath)

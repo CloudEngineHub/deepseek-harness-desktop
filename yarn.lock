@@ -1771,6 +1771,36 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deepseek-ai/dsh-client-ui-primitives@patch:@deepseek-ai/dsh-client-ui-primitives@file%3Avendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-primitives-0.1.2-rc.1.tgz#./patches/dsh-client-ui-primitives@0.1.2-rc.1.patch::locator=deepseek-harness-desktop%40workspace%3A.":
+  version: 0.1.2-rc.1
+  resolution: "@deepseek-ai/dsh-client-ui-primitives@patch:@deepseek-ai/dsh-client-ui-primitives@file%3Avendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-primitives-0.1.2-rc.1.tgz%23vendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-primitives-0.1.2-rc.1.tgz%3A%3Ahash=03a791&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-client-ui-primitives@0.1.2-rc.1.patch::version=0.1.2-rc.1&hash=a03c32&locator=deepseek-harness-desktop%40workspace%3A."
+  dependencies:
+    "@shikijs/langs": "npm:^4.3.1"
+    "@types/mdast": "npm:^4.0.4"
+    anser: "npm:^2.3.5"
+    clsx: "npm:^2.0.0"
+    katex: "npm:^0.16.47"
+    mdast-util-from-markdown: "npm:^2.0.3"
+    mdast-util-gfm: "npm:^3.1.0"
+    mdast-util-math: "npm:^3.0.0"
+    micromark-core-commonmark: "npm:^2.0.3"
+    micromark-extension-gfm: "npm:^3.0.0"
+    micromark-extension-math: "npm:^3.1.0"
+    micromark-factory-space: "npm:^2.0.1"
+    micromark-util-character: "npm:^2.1.1"
+    micromark-util-classify-character: "npm:^2.0.1"
+    micromark-util-sanitize-uri: "npm:^2.0.1"
+    micromark-util-symbol: "npm:^2.0.1"
+    micromark-util-types: "npm:^2.0.2"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    shiki: "npm:^4.3.1"
+  peerDependencies:
+    "@deepseek-ai/cordis": ^4.0.2
+  checksum: 10c0/a7a4aa44f04c302ef352db93f754b18c63946122814f06f6c52cb56aa3831462fde2fef8ed47109c3b6f7ac4b8dba70d84d3b41943f72b0b37cf356d74d015d8
+  languageName: node
+  linkType: hard
+
 "@deepseek-ai/dsh-client-ui-reference@file:vendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-reference-0.1.2-rc.1.tgz::locator=deepseek-harness-desktop%40workspace%3A.":
   version: 0.1.2-rc.1
   resolution: "@deepseek-ai/dsh-client-ui-reference@file:vendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-reference-0.1.2-rc.1.tgz#vendor/dsh-runtime/0.1.2-rc.1/deepseek-ai-dsh-client-ui-reference-0.1.2-rc.1.tgz::hash=93655d&locator=deepseek-harness-desktop%40workspace%3A."
