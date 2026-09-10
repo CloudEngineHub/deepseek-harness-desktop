@@ -1130,7 +1130,7 @@ describe('published package surface', () => {
 
   it('hides official plugin-manager and general subprocess consoles on Windows', () => {
     const dshPatchPath = './patches/dsh@0.1.5-rc.1.patch'
-    const retiredSubprocessPatchPath = './patches/dsh-subprocess-local@0.1.5-rc.1.patch'
+    const subprocessPatchPath = './patches/dsh-subprocess-local@0.1.5-rc.1.patch'
     const lockfile = readFileSync(new URL('yarn.lock', workspaceRoot), 'utf8')
     const dshPatch = readFileSync(new URL(dshPatchPath, workspaceRoot), 'utf8')
     const workspaceRequire = createRequire(new URL('package.json', packageRoot))
@@ -1148,9 +1148,9 @@ describe('published package surface', () => {
     const subprocessRuntime = readFileSync(join(dirname(subprocessManifest), 'lib', runnerEntry), 'utf8')
 
     expect(dshResolution('@deepseek-ai/dsh')).toContain(dshPatchPath)
-    expect(dshResolution('@deepseek-ai/dsh-subprocess-local')).toContain('patches/dsh-subprocess-local-electron@0.1.5-rc.1.patch')
+    expect(dshResolution('@deepseek-ai/dsh-subprocess-local')).toContain(subprocessPatchPath)
     expect(lockfile).toContain(dshPatchPath)
-    expect(lockfile).not.toContain(retiredSubprocessPatchPath)
+    expect(lockfile).toContain(subprocessPatchPath)
     expect(dshPatch).toContain('+\t\twindowsHide: true')
     expect(dshPluginRuntime).toMatch(/spawnSync\("pnpm"[\s\S]*?shell: process\.platform === "win32",\s+windowsHide: true/u)
     let spawnCalls = 0

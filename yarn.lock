@@ -3824,9 +3824,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@deepseek-ai/dsh-subprocess-local@patch:@deepseek-ai/dsh-subprocess-local@file%3Avendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz#./patches/dsh-subprocess-local-electron@0.1.5-rc.1.patch::locator=deepseek-harness-desktop%40workspace%3A.":
+"@deepseek-ai/dsh-subprocess-local@patch:@deepseek-ai/dsh-subprocess-local@file%3Avendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz#./patches/dsh-subprocess-local@0.1.5-rc.1.patch::locator=deepseek-harness-desktop%40workspace%3A.":
   version: 0.1.5-rc.1
-  resolution: "@deepseek-ai/dsh-subprocess-local@patch:@deepseek-ai/dsh-subprocess-local@file%3Avendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz%23vendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz%3A%3Ahash=cb9b1c&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-subprocess-local-electron@0.1.5-rc.1.patch::version=0.1.5-rc.1&hash=9f1343&locator=deepseek-harness-desktop%40workspace%3A."
+  resolution: "@deepseek-ai/dsh-subprocess-local@patch:@deepseek-ai/dsh-subprocess-local@file%3Avendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz%23vendor/dsh-runtime/0.1.5-rc.1/deepseek-ai-dsh-subprocess-local-0.1.5-rc.1.tgz%3A%3Ahash=cb9b1c&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-subprocess-local@0.1.5-rc.1.patch::version=0.1.5-rc.1&hash=9f1343&locator=deepseek-harness-desktop%40workspace%3A."
   dependencies:
     "@deepseek-ai/dsh-win32-process": "npm:^0.1.5-rc.1"
     koffi: "npm:^3.1.0"
