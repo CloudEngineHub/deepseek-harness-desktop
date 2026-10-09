@@ -20062,6 +20062,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"node-pty@patch:node-pty@npm%3A1.2.0-beta.15#./patches/node-pty@1.2.0-beta.15.patch::locator=deepseek-harness-desktop%40workspace%3A.":
+  version: 1.2.0-beta.15
+  resolution: "node-pty@patch:node-pty@npm%3A1.2.0-beta.15#./patches/node-pty@1.2.0-beta.15.patch::version=1.2.0-beta.15&hash=ad2eff&locator=deepseek-harness-desktop%40workspace%3A."
+  dependencies:
+    node-addon-api: "npm:^7.1.0"
+    node-gyp: "npm:latest"
+  checksum: 10c0/a8022623878f40823f78fa419dfeb3db537588d97a5047237b72a3d4f207d7a916cf4076906f0fc2a81a1a644541d54d19275c412b19629c2b051011e7da10f8
+  languageName: node
+  linkType: hard
+
 "node-releases@npm:^2.0.53":
   version: 2.0.53
   resolution: "node-releases@npm:2.0.53"
