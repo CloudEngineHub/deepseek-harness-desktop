@@ -380,7 +380,6 @@ describe.runIf(OFFICIAL_COMPUTER_USE)('installComputerUseCommand beside the offi
     profileDir = mkdtempSync(join(tmpdir(), 'dsh-computer-use-official-'))
     native.call.mockResolvedValue({ rawJson: JSON.stringify({ content: [{ type: 'text', text: 'ok' }] }) })
     ctx = new Context()
-    ctx.provide('subprocess', {})
     ctx.provide('agentPresets', { composedPreset: (agentCtx: Context) => presets.get(scopeOf(agentCtx)) })
     await ctx.plugin(SessionStore)
     await ctx.plugin(SessionProjectionRegistry)
