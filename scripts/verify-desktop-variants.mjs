@@ -34,7 +34,8 @@ const OBSOLETE_BETA_FILES = [
 
 // Beta and Next may follow different upstream releases (the beta and next channels in
 // upstream.json). While they do, each keeps its own upstream-family dependency pins in
-// package.json, and the API differences live only in these files.
+// package.json, and the official packages it offers among `dsh.optionalBundles` there;
+// the API differences live only in these files.
 const UPSTREAM_FAMILY_FILES = [
   'src/upstream-family.ts',
   'src/upstream-family-labels.ts',
@@ -52,24 +53,28 @@ function withoutUpstreamFamily(manifest) {
     if (rest.length > 0) copy[field] = Object.fromEntries(rest)
     else delete copy[field]
   }
+  if (Array.isArray(copy.dsh?.optionalBundles)) {
+    copy.dsh = { ...copy.dsh, optionalBundles: copy.dsh.optionalBundles.filter(name => !UPSTREAM_FAMILY_DEPENDENCY.test(name)) }
+  }
   return copy
 }
 
 /**
- * Compare two manifests, ignoring upstream-family dependency pins.
+ * Compare two manifests, ignoring upstream-family dependency pins and optional bundles.
  * @param left - one variant's package.json text.
  * @param right - the other variant's package.json text.
- * @returns whether everything but those pins is identical.
+ * @returns whether everything but those pins and bundles is identical.
  */
 export function sameOutsideUpstreamFamily(left, right) {
   return JSON.stringify(withoutUpstreamFamily(JSON.parse(left))) === JSON.stringify(withoutUpstreamFamily(JSON.parse(right)))
 }
 
 /**
- * Keep the target's own upstream-family pins in a manifest synced from the other variant.
+ * Keep the target's own upstream-family pins and optional bundles in a manifest synced from the other variant.
  * @param synced - the source manifest after the variant transform.
  * @param target - the target manifest before the sync.
- * @returns the synced manifest text with the target's pins, each dependency map sorted by name.
+ * @returns the synced manifest text with the target's pins, each dependency map sorted by name, and the target's
+ * upstream-family optional bundles after the shared ones.
  */
 export function keepUpstreamFamily(synced, target) {
   const manifest = JSON.parse(synced)
@@ -81,6 +86,12 @@ export function keepUpstreamFamily(synced, target) {
       ...Object.entries(own[field] ?? {}).filter(([name]) => UPSTREAM_FAMILY_DEPENDENCY.test(name)),
     ].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
     manifest[field] = Object.fromEntries(entries)
+  }
+  if (Array.isArray(manifest.dsh?.optionalBundles) || Array.isArray(own.dsh?.optionalBundles)) {
+    manifest.dsh = { ...manifest.dsh, optionalBundles: [
+      ...(manifest.dsh?.optionalBundles ?? []).filter(name => !UPSTREAM_FAMILY_DEPENDENCY.test(name)),
+      ...(own.dsh?.optionalBundles ?? []).filter(name => UPSTREAM_FAMILY_DEPENDENCY.test(name)),
+    ] }
   }
   return `${JSON.stringify(manifest, null, 2)}\n`
 }
@@ -315,7 +326,7 @@ export function verifyVariants() {
   }
 
   const declared = runtimesDiffer
-    ? `; Beta follows upstream ${channels.beta.runtimePackageVersion} and Next ${channels.next.runtimePackageVersion}, so their upstream-family pins, ${UPSTREAM_FAMILY_FILES.join(', ')} and Next-lead lines differ`
+    ? `; Beta follows upstream ${channels.beta.runtimePackageVersion} and Next ${channels.next.runtimePackageVersion}, so their upstream-family pins and optional bundles, ${UPSTREAM_FAMILY_FILES.join(', ')} and Next-lead lines differ`
     : ''
   process.stdout.write(`verify-desktop-variants: ${String(allPaths.length)} files are aligned between Next and Beta${declared}\n`)
 }

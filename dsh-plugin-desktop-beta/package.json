@@ -128,7 +128,9 @@
     "@deepseek-ai/dsh-experimental-ralph-bundle": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-session-search": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-session-titles-bundle": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-experimental-subagent-oar": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-terminal-bundle": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-experimental-tool-subagent-oar": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-tool-worktree": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-translator": "0.2.2-alpha.2",
     "@deepseek-ai/dsh-experimental-voice-input-bundle": "0.2.2-alpha.2",
@@ -321,7 +323,8 @@
     "optionalBundles": [
       "dsh-community-market",
       "dshmarket",
-      "@agents-anywhere/dsh-bridge-next"
+      "@agents-anywhere/dsh-bridge-next",
+      "@deepseek-ai/dsh-experimental-subagent-oar"
     ],
     "exclusiveBundles": [
       [
@@ -407,7 +410,7 @@
         "\\.(?:pak|dat|wasm)$",
         "/Contents/Resources/runtime/(?:arm64|x64)/primary-runtime(?:/|$)"
       ],
-      "x64ArchFiles": "{**/node_modules/{@dataiku/uv-darwin-*/**,@deepseek-ai/node-addon-system-darwin-*/**,node-pty/prebuilds/darwin-*/**,fs-ext/prebuilds/darwin-*/**,node-addon-require-builtin-darwin-*/**,@vscode/ripgrep-darwin-*/**,@img/sharp-darwin-*/**,@img/sharp-libvips-darwin-*/**,@koromix/koffi-darwin-*/**,@deepseek-ai/libreoffice-kit-darwin-*/**,meshcall-router-darwin-*/**,sherpa-onnx-darwin-*/**,@trycua/cua-driver-darwin-*/**,@ubjs/node-darwin-*/**,@reflink/reflink-darwin-*/**,@deepseek-ai/dsh-experimental-cua-macos/native/bin/**},Contents/Resources/runtime/**,Contents/Resources/runtime/**/.*/**}"
+      "x64ArchFiles": "{**/node_modules/{@dataiku/uv-darwin-*/**,@deepseek-ai/node-addon-system-darwin-*/**,node-pty/prebuilds/darwin-*/**,fs-ext/prebuilds/darwin-*/**,node-addon-require-builtin-darwin-*/**,@vscode/ripgrep-darwin-*/**,@img/sharp-darwin-*/**,@img/sharp-libvips-darwin-*/**,@koromix/koffi-darwin-*/**,@deepseek-ai/libreoffice-kit-darwin-*/**,meshcall-router-darwin-*/**,sherpa-onnx-darwin-*/**,@trycua/cua-driver-darwin-*/**,@ubjs/node-darwin-*/**,@reflink/reflink-darwin-*/**,@deepseek-ai/dsh-experimental-cua-macos/native/bin/**,@earendil-works/pi-tui/native/darwin/prebuilds/**},Contents/Resources/runtime/**,Contents/Resources/runtime/**/.*/**}"
     },
     "win": {
       "compression": "normal",

@@ -1,5 +1,6 @@
 /** Narrow Host capabilities consumed by the existing plugin markets. */
 import { installComputerUseCommand } from './host/computer-use-command.ts'
+import { installLaunchPresets } from './host/launch-presets.ts'
 import { installHostLogging } from './host/logging.ts'
 import { spawn } from 'node:child_process'
 import { basename, dirname, isAbsolute, join } from 'node:path'
@@ -7,11 +8,16 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { ProfilePnpmInvocation } from '@deepseek-ai/dsh-app-boot'
 import { installNotifications } from './notifications.ts'
 import { HostPermissions } from './host-permissions.ts'
+import type { LaunchPresetBundle } from './launch-presets.ts'
 import { NEXT_PACKAGE, profileName } from './profiles.ts'
 import { PNPM_IGNORE_MINIMUM_RELEASE_AGE } from './pnpm-policy.ts'
+import { OFFICIAL_OAR_SUBAGENTS } from './upstream-family-labels.ts'
 
 // scripts/verify-host.mjs reads the entry through the built extensions module.
 export { bundledPnpmEntry } from './bundled-pnpm.ts'
+
+/** OAR subagents' launch choices, when the followed release ships the provider. */
+const OAR_LAUNCH_PRESETS: LaunchPresetBundle | undefined = OFFICIAL_OAR_SUBAGENTS
 
 export const name = 'desktop-next-capabilities'
 export const inject = ['profileContext']
@@ -36,6 +42,7 @@ export function apply(ctx: Context): void {
   ctx.provide('desktopProfiles', { current: { name: profile.name, dir: profile.dir } })
   ctx.provide('desktopPnpm', runner)
   installComputerUseCommand(ctx, profile.dir)
+  if (OAR_LAUNCH_PRESETS !== undefined) installLaunchPresets(ctx, OAR_LAUNCH_PRESETS)
   if (process.send) ctx.provide('desktopActions', {
     ...(process.platform === 'darwin' || process.platform === 'win32' ? { openTerminal: () => {
       if (!process.connected || !process.send) throw new Error('Next shell is unavailable')

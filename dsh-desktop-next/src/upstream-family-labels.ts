@@ -15,3 +15,6 @@ export const OFFICIAL_PLUGIN_INDEX = {
     en: 'Adds a Discover tab to Plugins, where you browse and install plugins from plugin indexes you add.',
   },
 } as const
+
+/** dsh 0.2.1 ships no OAR subagent provider. */
+export const OFFICIAL_OAR_SUBAGENTS = undefined
