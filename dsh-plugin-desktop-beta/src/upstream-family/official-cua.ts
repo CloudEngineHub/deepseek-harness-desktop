@@ -1,6 +1,6 @@
 /** Run the official Computer Use provider from its unpacked copy, so it starts its helper from a physical file. */
 import type { ModuleHooks } from 'node:module'
-import { installUnpackedPackageResolution } from './unpacked-package.ts'
+import { installUnpackedPackageResolution } from '../host/unpacked-package.ts'
 
 /** The macOS provider of the official Computer Use bundle, `@deepseek-ai/dsh-cua-bundle`. */
 export const OFFICIAL_CUA_PROVIDER_PACKAGE = '@deepseek-ai/dsh-experimental-cua-macos'

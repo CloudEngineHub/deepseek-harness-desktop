@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
-import { cuaNativeEntries, prepareCuaNative, type RunXcrun } from '../scripts/cua-native.ts'
+import { cuaNativeEntries, prepareCuaNative, type RunXcrun } from '../../scripts/upstream-family/cua-native.ts'
 
 const roots: string[] = []
 afterEach(() => {

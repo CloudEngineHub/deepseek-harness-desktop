@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path'
 import { basename as posixBasename, dirname as posixDirname } from 'node:path/posix'
 import { getRawHeader } from '@electron/asar'
 import { nextRuntimeFileExclusion, nextRuntimePackageExclusion, type NextPackagingTarget, type RuntimePackageConstraints } from './runtime-file-policy.ts'
+import { OFFICIAL_CUA_UNPACKED } from './upstream-family.ts'
 import { DESKTOP_RUNTIME_FILE, parseDesktopRuntime, verifyPayload, type DesktopRuntimeDescriptor, type DesktopRuntimeFile, type NextRelease, type PayloadEntry, type PayloadSource, type VerifyPayloadOptions } from '../src/runtime-tree.ts'
 
 /** Application-relative directory holding the prepared payload that Electron Builder archives verbatim. */
@@ -182,7 +183,7 @@ const REQUIRED_UNPACKED = [
   /^node_modules\/@trycua\/cua-driver-/u,
   // The official Computer Use provider starts the helper below its own package directory as a child process; the
   // Host resolves the package to this copy.
-  /^node_modules\/@deepseek-ai\/dsh-experimental-cua-macos\//u,
+  ...OFFICIAL_CUA_UNPACKED === undefined ? [] : [OFFICIAL_CUA_UNPACKED],
   // The Office CLI and its direct dependencies run under the bundled standalone Node, which reads no archive;
   // beforePack unpacks the complete closure, and these guard its roots.
   /^node_modules\/@deepseek-ai\/libreoffice-kit\//u, /^node_modules\/(?:fflate|fontkit|koffi|saxes)\//u,
