@@ -21,6 +21,7 @@ import type { DesktopLanHttpsCertificate } from './lan-https-certificate.ts'
 import type { DesktopPermission, DesktopPermissionAction, DesktopPermissionSnapshot } from './permissions.ts'
 import { SYSTEM_PROXY_ENV, type DesktopSystemProxyProbe } from './system-proxy.ts'
 import { createOperationHistory } from './upstream-family.ts'
+import { HOST_COMPILE_CACHE_ENV } from './host-compile-cache.ts'
 import type { DesktopFailureStage } from '../../dsh-plugin-desktop/src/recovery-copy.ts'
 
 interface RuntimeOptions {
@@ -30,6 +31,8 @@ interface RuntimeOptions {
   root: string
   /** Bundled interpreter payload for this CPU; a development tree without one runs without Office skills. */
   primaryRuntime?: string
+  /** Node's module compile cache for the Host; Safe Mode starts without one. See host-compile-cache.ts. */
+  compileCache?: string
   executable: string
   addresses(): string[]
   /** Finish login-shell and system-proxy discovery before a Host child captures `process.env`. */
@@ -383,6 +386,7 @@ export class NextDesktopRuntime {
       { ...process.env, DSH_HOME: actualHome, DSH_NEXT_NATIVE_TOKEN: token,
         DSH_NEXT_PREFERENCES: JSON.stringify(effective), DSH_NEXT_TRUSTED_HOSTS: JSON.stringify(addresses),
         [SYSTEM_PROXY_ENV]: JSON.stringify(options.systemProxy?.() ?? {}),
+        [HOST_COMPILE_CACHE_ENV]: this.safeMode ? undefined : options.compileCache,
         ...(this.safeMode ? { DSH_TELEMETRY_DISABLED: '1' } : {}) },
       onFailure, options.primaryRuntime, undefined, join(options.root, 'lib', 'host.js'), options.onRestart, options.onNotification,
       (chunk, stream, pid) => this.diagnostics.hostChunk(chunk, stream, pid), options.onTerminal, options.onPermission, undefined, options.onPlatformLogin,

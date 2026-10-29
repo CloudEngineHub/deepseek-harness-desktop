@@ -14,7 +14,7 @@ afterEach(() => { for (const listener of process.listeners('uncaughtExceptionMon
 const fixture = vi.hoisted(() => ({
   windows: [] as any[], trays: [] as any[], handlers: new Map<string, (...args: any[]) => any>(),
   load: vi.fn(), report: vi.fn(), plugin: vi.fn(), pluginDone: vi.fn(), diagnosticAppend: vi.fn(),
-  terminalTarget: vi.fn(), openTerminal: vi.fn(), popup: vi.fn(),
+  terminalTarget: vi.fn(), openTerminal: vi.fn(), popup: vi.fn(), registerSchemes: vi.fn(),
   crashStart: vi.fn(), memory: { start: vi.fn(), stop: vi.fn(), settle: vi.fn(), incident: vi.fn(), hostMemory: vi.fn(), hostExited: vi.fn() },
   stop: vi.fn(async () => {}),
   close: vi.fn(async () => {}), start: vi.fn(async () => {}), preferences: { closeToTray: true, browserAccess: false, networkExposure: 'loopback' as 'loopback' | 'lan' },
@@ -40,6 +40,8 @@ vi.mock('../src/data-directory.ts', async importOriginal => ({
   ...await importOriginal<typeof import('../src/data-directory.ts')>(),
   dataDirectoryLocationRoot: () => fixture.locationRoot,
 }))
+// The macOS answer comes from a subprocess, which would outlive a test and report into the next one.
+vi.mock('../src/system-proxy-configuration.ts', () => ({ readSystemProxyConfiguration: async () => 'unknown' }))
 vi.mock('../src/desktop-runtime.ts', async () => { const { NextProfiles } = await import('../src/profiles.ts'); const { NextRecovery } = await import('../src/recovery.ts'); return { NextDesktopRuntime: class {
   preferences = { ...DEFAULT_PREFERENCES }
   busy = false
@@ -157,7 +159,7 @@ vi.mock('electron', async () => {
     nativeImage: { createFromPath: () => ({ isEmpty: () => false, setTemplateImage() {} }) },
     // Templates stay plain arrays for tray assertions; the popup spy is non-enumerable.
     Menu: { buildFromTemplate: (items: any) => Object.defineProperty(items, 'popup', { value: (options: unknown) => fixture.popup(items, options), configurable: true }), setApplicationMenu() {} },
-    protocol: { registerSchemesAsPrivileged() {}, handle() {} },
+    protocol: { registerSchemesAsPrivileged: fixture.registerSchemes, handle() {} },
     session: { defaultSession: { webRequest: { onBeforeSendHeaders() {} }, setPermissionCheckHandler() {}, setPermissionRequestHandler() {}, setDisplayMediaRequestHandler() {}, on() {} } },
     systemPreferences: { getMediaAccessStatus: () => 'not-determined', askForMediaAccess: vi.fn(async () => false), isTrustedAccessibilityClient: () => false },
     screen: { getDisplayMatching: () => ({ workArea: { x: 0, y: 25, width: 1728, height: 1092 } }) },
@@ -176,7 +178,7 @@ beforeEach(async () => {
   fixture.needsOnboarding = false; fixture.corruptProfile = false; fixture.restart.mockReset(); fixture.hostReady = false
   fixture.plugin.mockReset(); fixture.pluginDone.mockReset().mockResolvedValue({ exitCode: 0 });
   fixture.load.mockReset(); fixture.report.mockReset(); fixture.diagnosticAppend.mockReset();
-  fixture.terminalTarget.mockReset(); fixture.openTerminal.mockClear(); fixture.popup.mockClear();
+  fixture.terminalTarget.mockReset(); fixture.openTerminal.mockClear(); fixture.popup.mockClear(); fixture.registerSchemes.mockClear()
   fixture.crashStart.mockReset(); for (const action of Object.values(fixture.memory)) action.mockReset()
   fixture.stop.mockReset().mockResolvedValue(undefined); fixture.start.mockClear(); fixture.close.mockReset().mockResolvedValue(undefined)
   fixture.startupElevation = { relaunched: false, state: {} }; fixture.elevation = undefined
@@ -1636,6 +1638,50 @@ it('opens the window immediately without blocking on slow shell environment or s
     expect(fixture.runtimeOptions?.systemProxy?.()).toEqual({ HTTP_PROXY: 'http://127.0.0.1:7890' })
   } finally {
     vi.doUnmock('../src/system-proxy.ts')
+    vi.unstubAllEnvs()
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+it('starts reading the login-shell environment before Electron is ready, and reads it once', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'next-early-shell-env-'))
+  vi.stubEnv('DSH_DESKTOP_NEXT_HOME', home)
+  const read = vi.fn(async () => ({ updates: {}, source: 'process' as const, fallbackReason: 'not-packaged' as const }))
+  vi.doMock('../src/shell-environment.ts', async importOriginal => ({
+    ...await importOriginal<typeof import('../src/shell-environment.ts')>(),
+    resolveDesktopShellEnvironment: read,
+  }))
+  const { app } = await import('electron')
+  const ready = Promise.withResolvers<void>()
+  app.whenReady = () => ready.promise
+  try {
+    await import('../src/main.ts')
+    expect(read).toHaveBeenCalledOnce()
+    expect(fixture.windows).toHaveLength(0)
+    ready.resolve()
+    await vi.waitFor(() => expect(fixture.windows).toHaveLength(1))
+    await fixture.runtimeOptions!.prepareEnvironment!()
+    expect(read).toHaveBeenCalledOnce()
+    // The Host starts only after both probes; the record says what each cost.
+    expect(fixture.diagnosticAppend).toHaveBeenCalledWith(expect.objectContaining({ event: 'shell-environment.resolved',
+      fields: expect.objectContaining({ shellMs: expect.any(Number), systemProxyMs: expect.any(Number), systemProxyConfiguration: expect.any(String) }) }))
+  } finally {
+    vi.doUnmock('../src/shell-environment.ts')
+    vi.unstubAllEnvs()
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+it('registers the application scheme with the V8 code cache and gives the Host a per-release compile cache', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'next-code-cache-'))
+  vi.stubEnv('DSH_DESKTOP_NEXT_HOME', home)
+  try {
+    await import('../src/main.ts')
+    expect(fixture.registerSchemes).toHaveBeenCalledExactlyOnceWith([{ scheme: 'dsh-app',
+      privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true } }])
+    const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
+    expect(fixture.runtimeOptions?.compileCache).toBe(process.platform === 'win32' ? undefined : join(home, 'electron-user-data', 'host-compile-cache', version))
+  } finally {
     vi.unstubAllEnvs()
     rmSync(home, { recursive: true, force: true })
   }

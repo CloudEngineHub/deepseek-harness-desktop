@@ -1,7 +1,6 @@
-/** Alpha.2 shared Web profile runner, hosted by an Electron Node-mode child. */
+/** Alpha.2 shared Web profile runner, hosted by an Electron Node-mode child and started by bootstrap.ts. */
 import { auditHostPlugins, configureHostLogging, hostLog, hostOperation } from './logging.ts'
-import { basename, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { basename, join } from 'node:path'
 import { loadLayeredEnv } from '@deepseek-ai/dsh-app-boot'
 import { runProfile } from '@deepseek-ai/dsh/profile-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
@@ -27,8 +26,13 @@ import { installSkillBadgeResolution } from './skill-badge.ts'
 import { formatFatalDiagnostic } from './fatal-diagnostic.ts'
 import * as desktopOffice from './office.ts'
 import { resolveOfficeConfig } from './office.ts'
+import type { HostCompileCacheStatus } from '../host-compile-cache.ts'
 
-export async function main(): Promise<void> {
+/**
+ * Run the Host until it is asked to stop.
+ * @param options - what the entry reports: whether the module compile cache is on.
+ */
+export async function main(options: { readonly compileCache?: HostCompileCacheStatus } = {}): Promise<void> {
   // The Host lists and reads user workspaces; see asar-archive-policy.ts.
   disableAsarArchiveView(import.meta.url)
   const runtimeDir = process.argv[2]
@@ -50,7 +54,8 @@ export async function main(): Promise<void> {
   installSharpWasmResolution(runtimeDir)
   const preferences = parsePreferences(JSON.parse(process.env.DSH_NEXT_PREFERENCES ?? '{}'))
   configureHostLogging(preferences)
-  hostLog({ source: 'host', event: 'process.start', fields: { profile: basename(projectDir), node: process.version } })
+  hostLog({ source: 'host', event: 'process.start', fields: { profile: basename(projectDir), node: process.version,
+    ...(options.compileCache === undefined ? {} : { compileCache: options.compileCache }) } })
   const trustedHosts = JSON.parse(process.env.DSH_NEXT_TRUSTED_HOSTS ?? '[]') as unknown
   if (!Array.isArray(trustedHosts) || trustedHosts.some(host => typeof host !== 'string')) throw new Error('Invalid Next trusted hosts')
   const systemProxy = parseSystemProxyProbe(process.env[SYSTEM_PROXY_ENV])
@@ -155,7 +160,7 @@ export async function main(): Promise<void> {
   }
 }
 
-function fatal(error: unknown): void {
+export function fatal(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error)
   // The shell receives the complete inspected error here, not through stderr:
   // stderr bytes and this IPC message race, and the shell reports the first
@@ -165,5 +170,3 @@ function fatal(error: unknown): void {
   console.error(error)
   process.exitCode = 1
 }
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) void main().catch(fatal)
