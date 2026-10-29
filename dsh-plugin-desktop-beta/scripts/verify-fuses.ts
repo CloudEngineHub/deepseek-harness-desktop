@@ -53,7 +53,8 @@ function runPackagedNode(path: string, args: readonly string[], timeout: number,
 
 async function verifyFinalArtifacts(result: { outDir: string }): Promise<string[]> {
   const paths = ['mac/DSH Desktop Beta.app/Contents/MacOS/DSH Desktop Beta', 'mac-arm64/DSH Desktop Beta.app/Contents/MacOS/DSH Desktop Beta',
-    'mac-universal/DSH Desktop Beta.app/Contents/MacOS/DSH Desktop Beta', 'win-unpacked/DSH Desktop Beta.exe', 'linux-unpacked/dsh-desktop-beta']
+    'mac-universal/DSH Desktop Beta.app/Contents/MacOS/DSH Desktop Beta', 'win-unpacked/DSH Desktop Beta.exe', 'linux-unpacked/dsh-desktop-beta',
+    'linux-arm64-unpacked/dsh-desktop-beta']
   const executables = paths.map(path => join(result.outDir, path)).filter(existsSync)
   if (!executables.length) throw new Error('No packaged Next executable to verify')
   const expectedVersion = expectedNextVersion(desktopRoot)
