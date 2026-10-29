@@ -23,6 +23,7 @@ import {
   OFFICIAL_CUA_TOOL,
   foldSessionComputerUseEnabled,
   installComputerUseCommand,
+  officialComputerUseSupported,
   officialHelperUnsupported,
   readComputerUseCommandConfig,
   type ComputerUseCommandController,
@@ -102,12 +103,13 @@ async function createAgentInTest(
     },
   } as unknown as Agent
   if (options?.preset !== undefined) presets.set(agent, options.preset)
+  // Like the shipped agent loop, the Agent scope declares no `commands` injection.
   await ctx.plugin(
     Object.assign(
       (inner: Context) => {
         scope = createScope(inner, agent)
       },
-      { inject: ['tools', 'systemPrompt', 'commands', 'sessions', 'agents'] },
+      { inject: ['tools', 'systemPrompt', 'sessions', 'agents'] },
     ),
   )
   if (options?.owner) {
@@ -275,6 +277,23 @@ describe('installComputerUseCommand', () => {
     )
   })
 
+  it('registers /computer-use in each session and removes it when Computer Use (Next) unloads', async () => {
+    const fiber = ctx.plugin((inner: Context) => { installComputerUseCommand(inner, profileDir) })
+    await fiber
+    const { agent: early } = await createAgentInTest(ctx, 'session-early')
+    // Without the Computer Use (Next) tools there is nothing to load.
+    expect(ctx.commands.find(early, COMPUTER_USE_COMMAND_NAME)).toBeUndefined()
+
+    await ctx.plugin(Provider)
+    const { agent: late } = await createAgentInTest(ctx, 'session-late')
+    expect(ctx.commands.find(early, COMPUTER_USE_COMMAND_NAME)).toBeDefined()
+    expect(ctx.commands.list(late).map(item => item.name)).toContain(COMPUTER_USE_COMMAND_NAME)
+
+    await fiber.dispose()
+    expect(ctx.commands.find(early, COMPUTER_USE_COMMAND_NAME)).toBeUndefined()
+    expect(ctx.commands.find(late, COMPUTER_USE_COMMAND_NAME)).toBeUndefined()
+  })
+
   it('restores per-session Computer Use state from logged command events on session resume', async () => {
     installComputerUseCommand(ctx, profileDir)
     await ctx.plugin(Provider)
@@ -309,7 +328,7 @@ describe('installComputerUseCommand', () => {
         (inner: Context) => {
           resumedScope = createScope(inner, resumedAgent)
         },
-        { inject: ['tools', 'systemPrompt', 'commands', 'sessions', 'agents'] },
+        { inject: ['tools', 'systemPrompt', 'sessions', 'agents'] },
       ),
     )
     await ctx.agents.register(resumedAgent)
@@ -332,7 +351,7 @@ describe('installComputerUseCommand', () => {
       new Request(`http://localhost${COMPUTER_USE_SETTINGS_ROUTE}`, { method: 'GET' }),
     )
     expect(getRes.status).toBe(200)
-    expect(await getRes.json()).toEqual({ commandMode: true })
+    expect(await getRes.json()).toEqual({ commandMode: true, officialSupported: officialComputerUseSupported() })
 
     // Turn off commandMode via POST /api/desktop-next/computer-use
     const postRes = await route!.fetch(
@@ -416,13 +435,11 @@ describe.runIf(OFFICIAL_COMPUTER_USE)('installComputerUseCommand beside the offi
     await vi.waitFor(() => { expect(ctx.tools.get(OFFICIAL_CUA_TOOL, ptc)).toBeDefined() })
     expect(ctx.tools.get(OFFICIAL_CUA_TOOL, standard)).toBeUndefined()
 
-    // The command still forwards the task, which the official provider serves in this session.
-    const ptcRun = await ctx.commands.execute(ptc, `/${COMPUTER_USE_COMMAND_NAME} Open the settings`, [], signal)
-    expect(ptcRun?.result).toMatchObject({
-      kind: 'success', text: '此会话正在使用官方 Computer Use；切换到其他模式后改用 Computer Use（Next）。',
-    })
-    expect(steer).toHaveBeenCalledTimes(1)
-    expect(foldSessionComputerUseEnabled(ptc.session)).toBe(true)
+    // The session the official provider serves offers no `/computer-use`, so typing it runs nothing.
+    expect(ctx.commands.list(ptc).map(item => item.name)).not.toContain(COMPUTER_USE_COMMAND_NAME)
+    expect(await ctx.commands.execute(ptc, `/${COMPUTER_USE_COMMAND_NAME} Open the settings`, [], signal)).toBeUndefined()
+    expect(steer).not.toHaveBeenCalled()
+    expect(foldSessionComputerUseEnabled(ptc.session)).toBe(false)
     const ptcTools = await toolNames(ptc)
     expect(ptcTools).toContain(OFFICIAL_CUA_TOOL)
     expect(ptcTools.filter(name => name.startsWith(CUA_TOOL_PREFIX))).toEqual([])
@@ -445,15 +462,34 @@ describe.runIf(OFFICIAL_COMPUTER_USE)('installComputerUseCommand beside the offi
     const { agent } = await createAgentInTest(ctx, 'session-switch', { preset: 'standard' })
     await ctx.commands.execute(agent, `/${COMPUTER_USE_COMMAND_NAME}`, [], signal)
     expect(await toolNames(agent)).toContain(`${CUA_TOOL_PREFIX}check_permissions`)
+    const switchTo = (preset: string): void => {
+      presets.set(agent, preset)
+      ctx.emit('agent-preset/selected', agent.id, preset)
+    }
+    const changes = vi.fn()
+    ctx.on('commands/change', changes)
 
-    presets.set(agent, 'ptc')
-    ctx.emit('agent-preset/selected', agent.id, 'ptc')
+    switchTo('ptc')
     await vi.waitFor(() => { expect(ctx.tools.get(OFFICIAL_CUA_TOOL, agent)).toBeDefined() })
+    // The command leaves with the tools, before any request is assembled, and the client hears about it.
+    expect(ctx.commands.find(agent, COMPUTER_USE_COMMAND_NAME)).toBeUndefined()
+    expect(changes).toHaveBeenCalled()
     expect((await toolNames(agent)).filter(name => name.startsWith(CUA_TOOL_PREFIX))).toEqual([])
     expect(await sectionNames(agent)).not.toContain(CUA_PROMPT_SECTION)
 
+    switchTo('standard')
+    await vi.waitFor(() => { expect(ctx.tools.get(OFFICIAL_CUA_TOOL, agent)).toBeUndefined() })
+    expect(ctx.commands.find(agent, COMPUTER_USE_COMMAND_NAME)).toBeDefined()
+    // The session's earlier `/computer-use` still applies.
+    expect(await toolNames(agent)).toContain(`${CUA_TOOL_PREFIX}check_permissions`)
+
+    switchTo('ptc')
+    await vi.waitFor(() => { expect(ctx.commands.find(agent, COMPUTER_USE_COMMAND_NAME)).toBeUndefined() })
+    changes.mockClear()
     await unloadOfficial()
     expect(ctx.get('computerUse')?.providerName).toBeUndefined()
+    expect(ctx.commands.find(agent, COMPUTER_USE_COMMAND_NAME)).toBeDefined()
+    expect(changes).toHaveBeenCalled()
     expect(await toolNames(agent)).toContain(`${CUA_TOOL_PREFIX}check_permissions`)
     expect(await sectionNames(agent)).toContain(CUA_PROMPT_SECTION)
   })
@@ -476,6 +512,14 @@ it('keeps Computer Use (Next) where the official helper cannot start, before mac
   expect(officialHelperUnsupported('darwin', '25.1.0')).toBe(false)
   expect(officialHelperUnsupported('linux', '6.8.0')).toBe(false)
   expect(officialHelperUnsupported('win32', '10.0.26100')).toBe(false)
+})
+
+it('offers the official Computer Use switch only on macOS 14 and later', () => {
+  expect(officialComputerUseSupported('darwin', '22.6.0')).toBe(false)
+  expect(officialComputerUseSupported('darwin', '23.0.0')).toBe(true)
+  expect(officialComputerUseSupported('darwin', '25.1.0')).toBe(true)
+  expect(officialComputerUseSupported('linux', '6.8.0')).toBe(false)
+  expect(officialComputerUseSupported('win32', '10.0.26100')).toBe(false)
 })
 
 describe('computer-use-command-ui', () => {

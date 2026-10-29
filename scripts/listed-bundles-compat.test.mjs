@@ -1,4 +1,4 @@
-/** Exercise the official bundles Desktop lists although their release hides them: LiveShare, Ralph and session search. */
+/** Exercise the official bundles Desktop lists although their release hides them: LiveShare, Ralph, session search and Computer Use. */
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -7,8 +7,10 @@ import { test } from 'node:test'
 import { runInNewContext } from 'node:vm'
 
 // 0.2.2 ships these bundles with `dsh.bundle.listedByDefault: false`, which keeps them off both plugin manager lists
-// until a profile enables them. Desktop lists them like its other optional bundles.
+// until a profile enables them. Desktop lists them like its other optional bundles. The plugin manager still
+// leaves Computer Use off the lists on platforms its `dsh.bundle.platforms` excludes.
 const LISTED_BUNDLES = [
+  '@deepseek-ai/dsh-cua-bundle',
   '@deepseek-ai/dsh-experimental-liveshare',
   '@deepseek-ai/dsh-experimental-ralph-bundle',
   '@deepseek-ai/dsh-experimental-session-search',

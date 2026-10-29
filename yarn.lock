@@ -5882,6 +5882,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@deepseek-ai/dsh-cua-bundle@patch:@deepseek-ai/dsh-cua-bundle@file%3Avendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-bundle-0.2.2-alpha.2.tgz#./patches/dsh-cua-bundle@0.2.2-alpha.2.patch::locator=deepseek-harness-desktop%40workspace%3A.":
+  version: 0.2.2-alpha.2
+  resolution: "@deepseek-ai/dsh-cua-bundle@patch:@deepseek-ai/dsh-cua-bundle@file%3Avendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-bundle-0.2.2-alpha.2.tgz%23vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-bundle-0.2.2-alpha.2.tgz%3A%3Ahash=72992a&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-cua-bundle@0.2.2-alpha.2.patch::version=0.2.2-alpha.2&hash=1884c3&locator=deepseek-harness-desktop%40workspace%3A."
+  dependencies:
+    "@deepseek-ai/dsh-computer-use": "npm:0.2.2-alpha.2"
+    "@deepseek-ai/dsh-cua": "npm:0.2.2-alpha.2"
+    "@deepseek-ai/dsh-experimental-cua-macos": "npm:0.2.2-alpha.2"
+  peerDependencies:
+    "@deepseek-ai/cordis": ~4.0.6-alpha.1
+  dependenciesMeta:
+    "@deepseek-ai/dsh-experimental-cua-macos":
+      optional: true
+  checksum: 10c0/df29956c66a42d50907a7f5b0c9079504d99f74d08091f7a9d88020b6e2a134d8c7ea9bddbaf5d043200276ca6126965af7761f05062db652f50fe5fda28d6e3
+  languageName: node
+  linkType: hard
+
 "@deepseek-ai/dsh-cua@file:vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-0.2.2-alpha.2.tgz::locator=deepseek-harness-desktop%40workspace%3A.":
   version: 0.2.2-alpha.2
   resolution: "@deepseek-ai/dsh-cua@file:vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-0.2.2-alpha.2.tgz#vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-cua-0.2.2-alpha.2.tgz::hash=748ff4&locator=deepseek-harness-desktop%40workspace%3A."
