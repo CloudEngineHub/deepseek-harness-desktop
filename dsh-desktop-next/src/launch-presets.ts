@@ -25,6 +25,8 @@ export interface LaunchPreset {
 /** A row, by the id its bundle's patch declares, whose launch arguments Desktop sets from fixed choices. */
 export interface LaunchPresetRow {
   readonly id: string
+  /** Short name of what the row runs, tagged beside the row's title where the bundle's rows share one. */
+  readonly tag: string
   readonly title: BilingualText
   readonly presets: readonly LaunchPreset[]
 }

@@ -5,6 +5,7 @@ const hooks = vi.hoisted(() => ({ effects: [] as (() => unknown)[], states: [] a
 vi.mock('react', async importOriginal => ({
   ...await importOriginal<typeof import('react')>(),
   useEffect: (effect: () => unknown) => { hooks.effects.push(effect) },
+  useRef: (current: unknown) => ({ current }),
   useState: (initial: unknown) => {
     const index = hooks.cursor++
     if (!(index in hooks.states)) hooks.states[index] = typeof initial === 'function' ? (initial as () => unknown)() : initial
@@ -13,14 +14,14 @@ vi.mock('react', async importOriginal => ({
     }]
   },
 }))
-vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({ Button: 'button' }))
+vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({ Button: 'button', Tag: 'span' }))
 import { LAUNCH_PRESETS_ROUTE, matchLaunchPreset, type LaunchPresetBundle } from '../src/launch-presets.ts'
 import { installLaunchPresets } from '../src/host/launch-presets.ts'
 import { registerLaunchPresets } from '../src/client/launch-presets.tsx'
 
 afterEach(() => { hooks.effects = []; hooks.states = []; hooks.cursor = 0; vi.unstubAllGlobals() })
 
-type Node = { type: string | ((props: any) => Node); props: Record<string, any> }
+type Node = { type: string | ((props: any) => Node); props: Record<string, any>; ref?: { current: unknown } | null }
 const nodes = (value: unknown): Node[] => Array.isArray(value) ? value.flatMap(nodes)
   : value && typeof value === 'object' && 'type' in value && 'props' in value
     ? [value as Node, ...nodes((value as Node).props.children)] : []
@@ -32,8 +33,8 @@ const preset = (id: string, extra: object = {}) => ({ id, title: text(id), descr
 const BUNDLE: LaunchPresetBundle = {
   bundle: '@example/agents',
   rows: [
-    { id: 'agent-a', title: text('Agent A'), presets: [preset('locked'), preset('open', { shipped: true }), preset('free', { unrestricted: true })] },
-    { id: 'agent-b', title: text('Agent B'), presets: [preset('locked')] },
+    { id: 'agent-a', tag: 'Agent A', title: text('Agent A'), presets: [preset('locked'), preset('open', { shipped: true }), preset('free', { unrestricted: true })] },
+    { id: 'agent-b', tag: 'Agent B', title: text('Agent B'), presets: [preset('locked')] },
   ],
 }
 const A = ['locked', 'open', 'free']
@@ -117,13 +118,13 @@ async function page(rowId: string, rows: object[], post?: (body: unknown) => { s
     }
     return { ok: true, status: 200, json: async () => ({ rows }) }
   }))
-  const registrations: { name: string; key: string; view: (props: any) => unknown; props: Record<string, unknown> }[] = []
+  const registrations: { name: string; key?: string; id?: string; view: (props: any) => unknown; props: Record<string, unknown> }[] = []
   const ctx: any = {
     on: () => () => {}, remote: { $on: () => () => {} },
     slots: {
       inject: (_name: string, callback: () => unknown) => { callback() },
-      register: (options: { name: string; key: string; inject: () => Record<string, unknown> }, view: (props: any) => unknown) => {
-        registrations.push({ name: options.name, key: options.key, view, props: options.inject() })
+      register: (options: { name: string; key?: string; id?: string; inject: () => Record<string, unknown> }, view: (props: any) => unknown) => {
+        registrations.push({ name: options.name, key: options.key, id: options.id, view, props: options.inject() })
         return () => {}
       },
     },
@@ -133,16 +134,81 @@ async function page(rowId: string, rows: object[], post?: (body: unknown) => { s
   const props = { ...registration.props, t: (key: string) => key === 'language' ? 'zh' : key, view: 'page' }
   const tree = () => { hooks.cursor = 0; return render(registration.view(props) as Node) }
   tree()
-  for (const effect of hooks.effects.splice(0)) effect()
+  const cleanups = hooks.effects.splice(0).map(effect => effect())
   await new Promise(resolve => setTimeout(resolve, 0))
-  return { registrations, registration, tree, requests }
+  /** Leave the row's page, as its back control does. */
+  const close = (): void => { for (const cleanup of cleanups) if (typeof cleanup === 'function') cleanup() }
+  return { registrations, registration, tree, requests, close }
 }
 
 it('gives every row a configuration page on its bundle page that summarizes it by its title', async () => {
   const { registrations, registration } = await page('agent-a', [])
-  expect(registrations.map(item => [item.name, item.key])).toEqual([
-    ['plugins.row.config', '@example/agents#agent-a'], ['plugins.row.config', '@example/agents#agent-b']])
+  expect(registrations.map(item => [item.name, item.key ?? item.id])).toEqual([
+    ['plugins.row.config', '@example/agents#agent-a'], ['plugins.row.config', '@example/agents#agent-b'],
+    ['plugins.detail.badge', 'desktop-next-launch-presets'], ['plugins.detail.section', 'desktop-next-launch-presets']])
   expect(registration.view({ ...registration.props, t: () => 'zh', view: 'summary' })).toBe('Agent A')
+})
+
+it('tags each row page with what the row runs, as the official status tags look', async () => {
+  const { registrations } = await page('agent-a', [])
+  const badge = registrations.find(item => item.name === 'plugins.detail.badge')!
+  const pkg = { name: BUNDLE.bundle }
+  const tag = badge.view({ ...badge.props, subject: { kind: 'row', pkg, row: { rowId: 'agent-b' } } }) as Node
+  expect([tag.type, tag.props.className, tag.props.tone, tag.props.children]).toEqual(['span', 'dshNextPluginStatusTag', 'info', 'Agent B'])
+  expect(badge.view({ ...badge.props, subject: { kind: 'bundle', pkg } })).toBeNull()
+  expect(badge.view({ ...badge.props, subject: { kind: 'row', pkg: { name: '@example/other' }, row: { rowId: 'agent-b' } } })).toBeNull()
+  expect(badge.view({ ...badge.props, subject: { kind: 'row', pkg, row: { rowId: 'tool' } } })).toBeNull()
+})
+
+it('tags the rows in their bundle page component list beside each title control, only while that page shows', async () => {
+  const { registrations } = await page('agent-a', [])
+  const section = registrations.find(item => item.name === 'plugins.detail.section')!
+  const sheet = nodes(section.view({ ...section.props, subject: { kind: 'bundle', pkg: { name: BUNDLE.bundle } } }))
+    .find(node => node.type === 'style')!.props.children as string
+  const selector = (row: string) => `[data-plugin-detail="@example/agents"] [data-plugin-row$="${row}"] button:first-child:not([role="switch"])::after`
+  expect(sheet).toContain(`${selector('agent-a')}, ${selector('agent-b')} { display: inline-flex;`)
+  expect(sheet).toContain('background: color-mix(in srgb, var(--dsw-alias-state-business-primary) 10%, transparent);')
+  expect(sheet).toContain(`${selector('agent-a')} { content: "Agent A"; }`)
+  expect(sheet).toContain(`${selector('agent-b')} { content: "Agent B"; }`)
+  expect(section.view({ ...section.props, subject: { kind: 'row', pkg: { name: BUNDLE.bundle }, row: { rowId: 'agent-a' } } })).toBeNull()
+})
+
+it('returns from a row page to where its bundle page was scrolled, and opens the bundle page afresh otherwise', async () => {
+  const frames: (() => void)[] = []
+  const rowPage = await page('agent-a', [{ row: 'agent-a', active: true, preset: 'open', choices: A }])
+  vi.stubGlobal('requestAnimationFrame', (callback: () => void) => frames.push(callback))
+  vi.stubGlobal('cancelAnimationFrame', () => {})
+  const section = rowPage.registrations.find(item => item.name === 'plugins.detail.section')!
+  let onScroll: (() => void) | undefined
+  const body = { scrollTop: 0, addEventListener: (_type: string, listener: () => void) => { onScroll = listener }, removeEventListener: () => {} }
+  /** Open a detail page: render the section, attach its anchor and run its effect. */
+  const open = (subject: object) => {
+    hooks.effects = []
+    const tree = section.view({ ...section.props, subject })
+    const anchor = nodes(tree).find(node => node.type === 'span')
+    // React 18 keeps an element's ref beside its props.
+    if (anchor !== undefined) anchor.ref!.current = { closest: (selector: string) => selector === '[data-plugin-body]' ? body : null }
+    const cleanups = hooks.effects.splice(0).map(effect => effect())
+    return () => { for (const cleanup of cleanups) if (typeof cleanup === 'function') cleanup() }
+  }
+  const bundlePage = { kind: 'bundle', pkg: { name: BUNDLE.bundle } }
+  expect(section.view({ ...section.props, subject: { kind: 'bundle', pkg: { name: '@example/other' } } })).toBeNull()
+  let leave = open(bundlePage)
+  body.scrollTop = 640
+  onScroll!()
+  leave()
+  // The short row page clamps the shared scroll container before the person returns.
+  body.scrollTop = 0
+  rowPage.close()
+  leave = open(bundlePage)
+  for (const frame of frames.splice(0)) frame()
+  expect(body.scrollTop).toBe(640)
+  leave()
+  // Opened again from the list, not from a row page: the page keeps the position it opens at.
+  body.scrollTop = 0
+  open(bundlePage)
+  expect(frames).toHaveLength(0)
+  expect(body.scrollTop).toBe(0)
 })
 
 it('selects the running choice, marks the shipped and unrestricted ones, and saves a staged change', async () => {

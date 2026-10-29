@@ -26,9 +26,11 @@ export const OFFICIAL_OAR_SUBAGENTS = {
     zh: '通过 OAR 向已安装的编程智能体委派任务，并提供 Codex 和 Claude Code 配置。',
     en: 'Delegate tasks to installed coding agents through OAR, with Codex and Claude Code configurations.',
   },
+  experimental: true,
   rows: [
     {
       id: 'experimental-subagent-oar-codex',
+      tag: 'Codex',
       title: { zh: 'Codex 沙箱', en: 'Codex sandbox' },
       presets: [
         {
@@ -64,6 +66,7 @@ export const OFFICIAL_OAR_SUBAGENTS = {
     },
     {
       id: 'experimental-subagent-oar-claude',
+      tag: 'Claude Code',
       title: { zh: 'Claude Code 权限', en: 'Claude Code permissions' },
       presets: [
         {

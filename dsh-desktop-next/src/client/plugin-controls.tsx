@@ -34,6 +34,8 @@ export interface OfficialBundleCard {
   readonly bundle: string
   readonly title: { readonly zh: string; readonly en: string }
   readonly description: { readonly zh: string; readonly en: string }
+  /** The package belongs to the official experimental group; the card carries the official Experimental tag. */
+  readonly experimental?: boolean
 }
 
 /** OAR subagents, when the followed release ships the provider. */
@@ -217,6 +219,8 @@ function PluginControls({ context, t: translate, onOpenBundle, onOpenItem }: Pro
       </PluginCard>
       {OAR_SUBAGENTS !== undefined && <PluginCard title={t(OAR_SUBAGENTS.title.zh, OAR_SUBAGENTS.title.en)}
         description={t(OAR_SUBAGENTS.description.zh, OAR_SUBAGENTS.description.en)}
+        tags={OAR_SUBAGENTS.experimental === true
+          ? <Tag className="dshNextPluginStatusTag" tone="info">{t('实验性', 'Experimental')}</Tag> : undefined}
         icon={<PluginArtworkSubagent size={36} />} onOpen={() => { onOpenBundle(OAR_SUBAGENTS.bundle) }}>
         <BundleSwitch context={context} t={t} name={OAR_SUBAGENTS.bundle}
           label={t(`启用 ${OAR_SUBAGENTS.title.zh}`, `Enable ${OAR_SUBAGENTS.title.en}`)}
@@ -530,13 +534,16 @@ function ComputerUseActions({ context, t, subject }: PropsLocale<'desktop-next'>
   return <ComputerUseSettings context={context} zh={t('language') === 'zh'} mode="actions" />
 }
 
-function PluginCard({ title, description, icon, onOpen, children }: {
-  title: string; description: string; icon: ReactNode; onOpen(): void; children: ReactNode
+function PluginCard({ title, description, icon, tags, onOpen, children }: {
+  title: string; description: string; icon: ReactNode; tags?: ReactNode; onOpen(): void; children: ReactNode
 }) {
   return <div className="dshNextPluginCard" data-next-plugin-card>
     <span className="dshNextPluginIcon" aria-hidden="true">{icon}</span>
     <div className="dshNextPluginCardMain">
-      <button type="button" className="dshNextPluginCardOpen" aria-label={`${title} — ${description}`} onClick={onOpen}>{title}</button>
+      <div className="dshNextPluginCardTitle">
+        <button type="button" className="dshNextPluginCardOpen" aria-label={`${title} — ${description}`} onClick={onOpen}>{title}</button>
+        {tags}
+      </div>
       <span className="dshNextPluginCardDescription">{description}</span>
     </div>
     <div className="dshNextPluginCardActions">{children}</div>

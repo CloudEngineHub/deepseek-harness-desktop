@@ -72,6 +72,9 @@ it.runIf(oarSubagents !== undefined)('shows OAR subagents with a card of its own
   const oar = cards[2]!
   expect(oar.props.description).toBe(card.description.zh)
   expect(oar.props.icon.type).toBe('subagent-artwork')
+  // The official experimental group's packages carry the official Experimental tag; Desktop's own cards carry none.
+  expect([oar.props.tags.type, oar.props.tags.props.tone, oar.props.tags.props.children]).toEqual(['span', 'info', '实验性'])
+  expect(cards.slice(0, 2).map(node => node.props.tags)).toEqual([undefined, undefined])
   oar.props.onOpen()
   expect(page.props.onOpenBundle).toHaveBeenCalledExactlyOnceWith(card.bundle)
 })
