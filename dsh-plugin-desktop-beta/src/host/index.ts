@@ -6,7 +6,7 @@ import { loadLayeredEnv } from '@deepseek-ai/dsh-app-boot'
 import { runProfile } from '@deepseek-ai/dsh/profile-boot'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-host-webserver'
-import { hostOperationDiagnostics, webIndexInjections } from '../upstream-family.ts'
+import { hostOperationDiagnostics, installOfficialCuaResolution, webIndexInjections } from '../upstream-family.ts'
 import { loadNextProfile, NEXT_PACKAGE, readNextProfilePatches } from '../profiles.ts'
 import { bundledPnpmInvocation } from '../bundled-pnpm.ts'
 import { configureNextBrowserAccess } from '../desktop-browser-access.ts'
@@ -21,7 +21,6 @@ import { watchPlatformLogin, type PlatformLoginAccount } from './platform-login.
 import { installAgentPresetResolution } from './agent-preset.ts'
 import { installCuaDriverResolution } from './cua-driver.ts'
 import { installOfficeEngineResolution } from './office-engine.ts'
-import { installOfficialCuaResolution } from './official-cua.ts'
 import { installSharpWasmResolution } from './sharp-wasm.ts'
 import { installSkillBadgeResolution } from './skill-badge.ts'
 import { formatFatalDiagnostic } from './fatal-diagnostic.ts'
@@ -45,7 +44,7 @@ export async function main(): Promise<void> {
   // The badge skill tells the model to take its PNG from the directory it announces, which shells and the Host's filesystem service cannot read inside the archive.
   installSkillBadgeResolution(runtimeDir)
   // The official Computer Use provider starts the helper beside its own module as a child process, which reads no archive.
-  installOfficialCuaResolution(runtimeDir)
+  installOfficialCuaResolution?.(runtimeDir)
   // Linux sharp must not load its native backends beside the GLib Electron links; it runs its WebAssembly build instead.
   installSharpWasmResolution(runtimeDir)
   const preferences = parsePreferences(JSON.parse(process.env.DSH_NEXT_PREFERENCES ?? '{}'))

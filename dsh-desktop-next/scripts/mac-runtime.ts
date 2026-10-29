@@ -1,6 +1,6 @@
 import { chmodSync, existsSync } from 'node:fs'
 import { MACOS_UNIVERSAL_NATIVE_ENTRIES, prepareMacUniversalRuntime } from '../../dsh-plugin-desktop/scripts/mac-universal.ts'
-import { CUA_NATIVE_ARCHS, cuaNativeEntries, prepareCuaNative } from './cua-native.ts'
+import { cuaNativeEntries, prepareCuaNative } from './upstream-family.ts'
 // Next uses the official Host, which has no dependency on the old desktop lock binding.
 export const NEXT_MAC_NATIVE_ENTRIES = [
   ...MACOS_UNIVERSAL_NATIVE_ENTRIES.filter(entry => !entry.path.startsWith('node_modules/fs-ext/')),
@@ -16,9 +16,9 @@ export const NEXT_MAC_NATIVE_ENTRIES = [
  * @returns Thin native files per CPU, relative to the application directory.
  */
 export function nextMacNativeEntries(desktopRoot: string): { arch: 'arm64' | 'x86_64'; path: string }[] {
-  return [...NEXT_MAC_NATIVE_ENTRIES, ...cuaNativeEntries(desktopRoot)]
+  return [...NEXT_MAC_NATIVE_ENTRIES, ...cuaNativeEntries?.(desktopRoot) ?? []]
 }
 export function prepareNextMacRuntime(desktopRoot: string): void {
-  prepareCuaNative(desktopRoot, CUA_NATIVE_ARCHS)
+  prepareCuaNative?.(desktopRoot, ['arm64', 'x64'])
   prepareMacUniversalRuntime({ desktopRoot, nativeEntries: nextMacNativeEntries(desktopRoot), exists: existsSync, chmod: chmodSync })
 }

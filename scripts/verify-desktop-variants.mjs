@@ -39,14 +39,17 @@ const OBSOLETE_BETA_FILES = [
 const UPSTREAM_FAMILY_FILES = [
   'src/upstream-family.ts',
   'src/upstream-family-labels.ts',
+  'src/client/upstream-family.ts',
+  'scripts/upstream-family.ts',
   'tests/upstream-family.ts',
 ]
 
-// Modules and specs that only a variant whose release offers their upstream APIs carries. While the
+// Modules, scripts and specs that only a variant whose release offers their upstream APIs carries. While the
 // releases differ, a file below these directories may exist in one variant only; the other variant's
 // upstream-family files export what its shared code imports in their place.
 const UPSTREAM_FAMILY_DIRECTORIES = [
   'src/upstream-family/',
+  'scripts/upstream-family/',
   'tests/upstream-family/',
 ]
 

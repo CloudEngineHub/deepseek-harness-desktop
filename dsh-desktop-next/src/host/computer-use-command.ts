@@ -1,51 +1,25 @@
 /**
- * Per-session on-demand `/computer-use` command and tool/prompt gating for Computer Use (Next).
- * Wherever the official Computer Use serves an Agent, Computer Use (Next) and its command stay out of that Agent.
+ * Per-session on-demand `/computer-use` command and tool/prompt gating for Computer Use (Next). Where
+ * `officialComputerUse` (src/upstream-family.ts) reports that the official Computer Use serves an Agent,
+ * Computer Use (Next) and its command stay out of that Agent.
  */
-import { release } from 'node:os'
 import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type { CommandDefinition, CommandResult } from '@deepseek-ai/dsh-commands'
-import type {} from '@deepseek-ai/dsh-computer-use'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-tools'
 import { atomicJson, readPrivateFile } from '../private-files.ts'
+import { officialComputerUse } from '../upstream-family.ts'
 
 export const COMPUTER_USE_SETTINGS_ROUTE = '/api/desktop-next/computer-use'
 export const COMPUTER_USE_SETTINGS_FILE = 'desktop-next.computer-use.json'
 export const COMPUTER_USE_COMMAND_NAME = 'computer-use'
 export const CUA_TOOL_PREFIX = 'cua_driver_native__'
 export const CUA_PROMPT_SECTION = 'computer-use:cua-driver-native'
-/** Name the official provider (`@deepseek-ai/dsh-cua`) takes in the computer-use registry of the official bundle. */
-export const OFFICIAL_COMPUTER_USE_PROVIDER = 'dsh-cua'
-/** Tool the official provider registers in the scope of each Agent it serves, PTC sessions by default. */
-export const OFFICIAL_CUA_TOOL = 'cua'
-
-/**
- * Whether the official helper cannot start on this system. It requires macOS 14 (Darwin 23), yet the provider
- * loads and registers its tool on an older macOS too; other platforms never load the official provider.
- * @param platform - Host platform.
- * @param osRelease - Kernel release as `os.release()` reports it.
- * @returns true on macOS 13 and earlier.
- */
-export function officialHelperUnsupported(platform: NodeJS.Platform = process.platform, osRelease: string = release()): boolean {
-  return platform === 'darwin' && Number.parseInt(osRelease, 10) < 23
-}
-
-/**
- * Whether the official Computer Use can run here at all: macOS 14 (Darwin 23) or later. The Plugins page
- * offers its switch only then.
- * @param platform - Host platform.
- * @param osRelease - Kernel release as `os.release()` reports it.
- * @returns true on macOS 14 and later.
- */
-export function officialComputerUseSupported(platform: NodeJS.Platform = process.platform, osRelease: string = release()): boolean {
-  return platform === 'darwin' && !officialHelperUnsupported(platform, osRelease)
-}
 
 export interface ComputerUseCommandConfig {
   commandMode: boolean
@@ -137,7 +111,7 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       fetch: async (request: Request): Promise<Response> => {
         if (request.method === 'GET') {
           return Response.json(
-            { commandMode: controller.getCommandMode(), officialSupported: officialComputerUseSupported() },
+            { commandMode: controller.getCommandMode(), ...officialComputerUse?.settings() },
             { headers: { 'cache-control': 'no-store' } },
           )
         }
@@ -171,8 +145,7 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
     const sessionStates = new WeakMap<Session, boolean>()
     const trackedAgents = new Set<Agent>()
     const agentGates = new Map<Agent, AgentGateRecord>()
-    // `/computer-use` is registered per Agent, so it leaves the Agents the official Computer Use serves.
-    const agentCommands = new Map<Agent, () => void>()
+    let disposeCommand: (() => void) | undefined
     let updatingTools = false
 
     const isSessionEnabled = (session: Session): boolean => {
@@ -208,15 +181,12 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       return false
     }
 
-    // The official provider registers its tool only for the Agents it serves (by default, PTC sessions).
-    const officialCanServe = !officialHelperUnsupported()
-    const isOfficialServing = (agent: Agent): boolean =>
-      officialCanServe
-      && runtimeCtx.get('computerUse')?.providerName === OFFICIAL_COMPUTER_USE_PROVIDER
-      && runtimeCtx.tools.get(OFFICIAL_CUA_TOOL, agent) !== undefined
-
     const isAgentGated = (agent: Agent): boolean =>
-      isOfficialServing(agent) || (commandMode && !isAgentEnabled(agent))
+      officialComputerUse?.serves(runtimeCtx, agent) === true || (commandMode && !isAgentEnabled(agent))
+
+    // Beside the official Computer Use, `/computer-use` is registered per Agent and leaves the Agents it serves.
+    const registerCommand = officialComputerUse?.commandRegistrar(runtimeCtx)
+      ?? ((definition: CommandDefinition): (() => void) => runtimeCtx.commands.register(definition))
 
     const getGlobalCuaToolNames = (): string[] =>
       runtimeCtx.tools
@@ -237,75 +207,7 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       }
     }
 
-    const command: CommandDefinition = {
-      name: COMPUTER_USE_COMMAND_NAME,
-      description: '开启或关闭 Computer Use（Next）',
-      input: {
-        hint: '[off|message]',
-        attachments: true,
-      },
-      handler: ({ agent, rawInput, attachments }): CommandResult => {
-        trackedAgents.add(agent)
-        const trimmed = rawInput.trim()
-        const attachmentBlocks = attachments ?? []
-        if (isOffCommandArg(trimmed)) {
-          if (attachmentBlocks.length > 0) {
-            return {
-              kind: 'error',
-              text: '/computer-use off 不接受附件。',
-            }
-          }
-          sessionStates.set(agent.session, false)
-          reconcileAll()
-          return {
-            kind: 'success',
-            text: '已关闭 Computer Use（Next）。',
-          }
-        }
-        sessionStates.set(agent.session, true)
-        reconcileAll()
-        const taskText = isOnOnlyCommandArg(trimmed) ? '' : trimmed
-        if (taskText.length > 0 || attachmentBlocks.length > 0) {
-          agent.steer(
-            createUserMessage({
-              content: [
-                ...attachmentBlocks,
-                ...(taskText.length > 0 ? [{ type: 'text' as const, text: taskText }] : []),
-              ],
-              source: { kind: 'user' },
-            }),
-          )
-        }
-        return {
-          kind: 'success',
-          text: '已开启 Computer Use（Next），输入 /computer-use off 关闭。',
-        }
-      },
-    }
-
-    const clearAgentCommand = (agent: Agent): void => {
-      const dispose = agentCommands.get(agent)
-      if (!dispose) return
-      agentCommands.delete(agent)
-      try { dispose() } catch { /* Agent scope may already be disposed */ }
-    }
-
-    const reconcileAgentCommand = (agent: Agent, cuaToolNames: readonly string[]): void => {
-      if (!commandMode || cuaToolNames.length === 0 || isOfficialServing(agent)) {
-        clearAgentCommand(agent)
-        return
-      }
-      if (agentCommands.has(agent)) return
-      // The Agent scope declares no `commands` injection; a registration through it stays local to that Agent.
-      const commands = agent.ctx.get('commands')
-      if (!commands) return
-      try {
-        agentCommands.set(agent, commands.register(command))
-      } catch { /* A disposed Agent scope rejects new registrations */ }
-    }
-
     const reconcileAgent = (agent: Agent, cuaToolNames: readonly string[]): void => {
-      reconcileAgentCommand(agent, cuaToolNames)
       const shouldGate = cuaToolNames.length > 0 && isAgentGated(agent)
       if (!shouldGate) {
         clearAgentGate(agent)
@@ -347,6 +249,59 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       updatingTools = true
       try {
         const cuaToolNames = getGlobalCuaToolNames()
+        const shouldRegisterCommand = commandMode && cuaToolNames.length > 0
+        if (shouldRegisterCommand && !disposeCommand) {
+          disposeCommand = registerCommand({
+            name: COMPUTER_USE_COMMAND_NAME,
+            description: '开启或关闭 Computer Use（Next）',
+            input: {
+              hint: '[off|message]',
+              attachments: true,
+            },
+            handler: ({ agent, rawInput, attachments }): CommandResult => {
+              trackedAgents.add(agent)
+              const trimmed = rawInput.trim()
+              const attachmentBlocks = attachments ?? []
+              if (isOffCommandArg(trimmed)) {
+                if (attachmentBlocks.length > 0) {
+                  return {
+                    kind: 'error',
+                    text: '/computer-use off 不接受附件。',
+                  }
+                }
+                sessionStates.set(agent.session, false)
+                reconcileAll()
+                return {
+                  kind: 'success',
+                  text: '已关闭 Computer Use（Next）。',
+                }
+              }
+              sessionStates.set(agent.session, true)
+              reconcileAll()
+              const taskText = isOnOnlyCommandArg(trimmed) ? '' : trimmed
+              if (taskText.length > 0 || attachmentBlocks.length > 0) {
+                agent.steer(
+                  createUserMessage({
+                    content: [
+                      ...attachmentBlocks,
+                      ...(taskText.length > 0 ? [{ type: 'text' as const, text: taskText }] : []),
+                    ],
+                    source: { kind: 'user' },
+                  }),
+                )
+              }
+              return {
+                kind: 'success',
+                text: '已开启 Computer Use（Next），输入 /computer-use off 关闭。',
+              }
+            },
+          })
+        } else if (!shouldRegisterCommand && disposeCommand) {
+          const dispose = disposeCommand
+          disposeCommand = undefined
+          dispose()
+        }
+
         for (const agent of collectLiveAgents()) {
           reconcileAgent(agent, cuaToolNames)
         }
@@ -381,7 +336,6 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       trackedAgents.delete(agent)
       updatingTools = true
       try {
-        clearAgentCommand(agent)
         clearAgentGate(agent)
       } finally {
         updatingTools = false
@@ -416,8 +370,10 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
         }
         updatingTools = true
         try {
-          for (const agent of [...agentCommands.keys()]) {
-            clearAgentCommand(agent)
+          if (disposeCommand) {
+            const dispose = disposeCommand
+            disposeCommand = undefined
+            dispose()
           }
           for (const agent of [...agentGates.keys()]) {
             clearAgentGate(agent)

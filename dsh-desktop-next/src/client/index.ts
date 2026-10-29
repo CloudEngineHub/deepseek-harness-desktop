@@ -17,6 +17,7 @@ import './onboarding.css'
 import { registerPluginControls } from './plugin-controls.tsx'
 import { installPluginControlsStyles } from './plugin-controls-styles.ts'
 import { registerComputerUseCommandUi } from './computer-use-command-ui.tsx'
+import { installOfficialComputerUseStyles } from './upstream-family.ts'
 import { desktopDirectoryPicker, registerDesktopDirectoryPicker } from './directory-picker.ts'
 import { SettingsRequests } from './settings-requests.tsx'
 import type { DesktopSettingsLocaleKey } from '../../../dsh-plugin-desktop/src/client/desktop-settings-locales.ts'
@@ -39,6 +40,7 @@ export function apply(ctx: Context): void {
   }), 'Next settings and recovery labels')
   ctx.effect(() => installDesktopSettingsStyles('dsh-desktop-next'), 'Shared Desktop settings styles')
   ctx.effect(installPluginControlsStyles, 'Plugin controls and permission dialog styles')
+  if (installOfficialComputerUseStyles) ctx.effect(installOfficialComputerUseStyles, 'Official Computer Use row styles')
   registerPluginControls(ctx)
   registerComputerUseCommandUi(ctx)
   // The Desktop window adds workspaces through the system folder dialog like upstream

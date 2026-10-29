@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
-import { OFFICIAL_CUA_PROVIDER_PACKAGE } from '../src/host/official-cua.ts'
+import { OFFICIAL_CUA_PROVIDER_PACKAGE } from '../../src/upstream-family/official-cua.ts'
 
 /** The official Computer Use bundle; a Desktop package that depends on it ships the bundle's macOS provider. */
 export const OFFICIAL_COMPUTER_USE_BUNDLE = '@deepseek-ai/dsh-cua-bundle'
@@ -65,7 +65,7 @@ export function cuaNativeEntries(desktopRoot: string): { arch: 'arm64' | 'x86_64
  * Prepare the helpers the official Computer Use provider starts from `native/bin/darwin-<arch>/dsh-cua-native`
  * below its package directory. The provider's README and published `files` place compiled helpers there, so a
  * helper the official release ships is used as published: Desktop only makes it executable and never compiles
- * or rewrites it. Desktop builds only the helpers the package lacks (0.2.1-rc.4 ships none), with the
+ * or rewrites it. Desktop builds only the helpers the package lacks (0.2.2-alpha.2 ships none), with the
  * arguments the provider itself uses in a source checkout and one incremental SwiftPM build per CPU under
  * `.desktop-build/cua-native/<arch>`. The sha256 of each helper Desktop writes is recorded there, outside the
  * package, so a later run rebuilds only a helper whose bytes still match that record; reinstalling the package

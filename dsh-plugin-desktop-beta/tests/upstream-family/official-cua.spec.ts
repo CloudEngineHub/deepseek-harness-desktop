@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, expect, it } from 'vitest'
-import { OFFICIAL_CUA_PROVIDER_PACKAGE, installOfficialCuaResolution } from '../src/host/official-cua.ts'
+import { OFFICIAL_CUA_PROVIDER_PACKAGE, installOfficialCuaResolution } from '../../src/upstream-family/official-cua.ts'
 
 const roots: string[] = []
 afterEach(() => {
@@ -36,7 +36,7 @@ it('runs the provider from its unpacked copy, so the helper it starts is a physi
   writeFileSync(join(runtime, 'package.json'), JSON.stringify({ name: 'dsh-plugin-desktop-beta' }))
   // vitest's own loader does not run hooks for ES modules, so a fresh Node loads the provider.
   const script = [
-    `import { installOfficialCuaResolution } from ${JSON.stringify(new URL('../src/host/official-cua.ts', import.meta.url).href)}`,
+    `import { installOfficialCuaResolution } from ${JSON.stringify(new URL('../../src/upstream-family/official-cua.ts', import.meta.url).href)}`,
     `installOfficialCuaResolution(${JSON.stringify(runtime)})`,
     `console.log((await import(${JSON.stringify(pathToFileURL(join(runtime, PACKAGE, 'lib', 'index.js')).href)})).helper)`,
   ].join('\n')
