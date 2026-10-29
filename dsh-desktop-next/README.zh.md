@@ -53,12 +53,12 @@ Next 的 macOS 打包与 Stable、Beta 一样，直接使用分层 `.icon` 源�
 - **侧边栏浏览器：** 桌面应用复用官方浏览器工具栏，由隔离的 Electron `WebContentsView` 承载网页。GitHub 等禁止 iframe 嵌入的网站按顶层页面加载，保留 CSP 与 `X-Frame-Options`。前进、后退与地址栏跟随真实导航。视图跟随分栏尺寸和缩放，避让调整宽度的拖动区域，在弹窗或其他分栏遮挡时隐藏，并随标签关闭或渲染器退出而释放。每个标签使用临时会话，不含应用 preload、应用 Cookie、Node 接口、下载或自动授权。普通 Web 客户端继续使用官方 iframe。
 - **桌面设置：** 后台运行、macOS 透明材质、本机和局域网访问、日志级别，以及用户回合完成／失败时的独立通知开关。后台任务不发送通知。沿用原桌面版的分组卡片、Profile 选择和通知开关；开关与材质即时保存。官方设置顶部提供终端和重启菜单，包含重新加载界面、重启应用和重启到恢复模式。与原桌面版保持一致，Windows 不提供材质选项，始终使用不透明窗口；旧的 Acrylic 或 Mica 偏好按关闭读取。通知还需系统授权，仅在主窗口未聚焦时显示。成功通知以本轮用户消息为标题、AI 最后一条可见回复为正文，过长内容会截断；失败通知显示通用状态，子代理和自动回合不发送通知。
 - **Profile：** 首次启动和隔离的安全模式默认使用 `desktop`。已有的选择继续保留，包括此前名为 `default` 的 Profile；不会重命名或覆盖已有目录。支持新建、切换、打开目录或移除未使用的 Profile。托盘的新建入口直接聚焦名称，创建后可切换；损坏的清单或缺少 Next bundle 的 Profile 标为不可用，切换当前 Profile 不会重复重启。移除操作将文件移入恢复备份目录，当前 Profile 和 `desktop` 不可移除。Profile 分别保存插件依赖、激活列表和补丁；会话、设置和凭据仍按上游规则在同一个 Next home 内共享，不提供账号或数据隔离。
-- **首次引导：** 先按桌面端自己的 Profile 完成记录或主动重新打开请求判断是否显示桌面设置。需要引导时，在启动 Host 之前先打开轻量独立欢迎窗口，展示 Next 六步引导流程：欢迎、插件市场、远程控制、Computer Use（含现有系统权限弹窗）、浏览器访问、恢复说明。返回保留草稿；完成时保存 Profile 功能、浏览器访问设置和 Computer Use provider，最后记录完成，随后按所选配置一次性启动 Host 并打开主窗口；跳过保留原配置并启动 Host。主窗口打开后，通过续接槽展示 DeepSeek 账号登录引导卡片（完成引导后），随后交由官方按账号、API Key 和官方进度独立判断是否显示账号引导；两者不代替对方完成或重置记录。未完成的引导下次继续，已完成的 Profile 不自动重复，安全模式和恢复模式绕过桌面引导。“桌面设置 → 桌面工具 → 设置向导”可确认重启并带入当前配置。
+- **首次引导：** 先按桌面端自己的 Profile 完成记录或主动重新打开请求判断是否显示桌面设置。需要引导时，在启动 Host 之前先打开轻量独立欢迎窗口，展示 Next 六步引导流程：欢迎、插件市场、远程控制、Computer Use（Next，含现有系统权限弹窗）、浏览器访问、恢复说明。返回保留草稿；完成时保存 Profile 功能、浏览器访问设置和 Computer Use provider，最后记录完成，随后按所选配置一次性启动 Host 并打开主窗口；跳过保留原配置并启动 Host。主窗口打开后，通过续接槽展示 DeepSeek 账号登录引导卡片（完成引导后），随后交由官方按账号、API Key 和官方进度独立判断是否显示账号引导；两者不代替对方完成或重置记录。未完成的引导下次继续，已完成的 Profile 不自动重复，安全模式和恢复模式绕过桌面引导。“桌面设置 → 桌面工具 → 设置向导”可确认重启并带入当前配置。
 - **插件市场：** 新 Profile 默认不启用插件市场。官方**插件**页顶部的开关可启用或停用上次在当前页面选择的市场；没有选择记录时默认启用 `dsh-community-market`。也可直接选择 `dsh-community-market` 或 `dshmarket`。选项复用旧版桌面的名称、说明和仓库链接。选择一个市场时，官方插件管理器会在同一次操作中停用另一个，并保留已安装的插件。社区市场保留侧边栏入口；dshmarket 保留**设置 → 插件市场**入口。社区市场沿用发现、来源管理、安装预览、确认安装、启用/停用开关和卸载流程。包操作通过官方插件管理器执行，无需重启即可生效；macOS 和 Windows 也支持市场中的终端入口。
 - **手机远控：** 在**插件**页顶部通过独立开关启用 `@agents-anywhere/dsh-bridge-next`（默认关闭）。开关左侧的齿轮打开现有手机连接弹窗，也可从侧边栏进入；启用后齿轮才可使用。AA 使用默认状态目录（`~/.agents-anywhere/dsh-bridge-next`），与 Stable/Beta 及其他 Next Profile 共享登录、设备绑定和 Connector 设置。启用状态仍按 Profile 保存；切换 Profile 会停止旧 Host 和其中的远控连接。旧版 Next 生成的逐 Profile 状态目录覆盖会在下次 Host 启动时移除。原状态目录保留，不自动合并凭据；只在旧隔离目录中登录过的用户可能需要重新登录。多个版本同时运行时，仍受 AA 的共享状态所有权检查约束。
 - **桌面工具：** 打开数据、Profile 和日志目录，刷新界面，打开开发者工具，导出诊断，以及打开 macOS/Windows 终端。终端提供当前安装的 `dsh`、`pnpm` 和基于 Electron 的 `node`，其中 `dsh` 的插件命令始终使用内置 pnpm，与终端 `PATH` 解析到哪个 `pnpm` 无关；应用处于安全模式时，终端仍选择原 Profile。
 
-市场、远程控制和 Computer Use 位于普通插件列表上方，并与列表的内容宽度对齐。远程控制和 Computer Use 上下排列，设置齿轮位于各自开关左侧。两个市场和远控 bundle 不再重复显示为普通插件卡片。开关仍调用官方管理器，选择保存在当前 Profile 中；已有 Profile 如果同时开启了两个市场，会提示用户选择其中一个。两个市场安装的 bundle 插件仍在普通列表中管理，可继续启用、停用和卸载。dshmarket 自己的插件停用逻辑保持原样。旧 `desktop-next.features.json` 中的选择只迁移一次到 `package.json`，以后启动遵循官方管理器的设置。
+市场、远程控制和 Computer Use（Next）位于普通插件列表上方，并与列表的内容宽度对齐。远程控制和 Computer Use（Next）上下排列，设置齿轮位于各自开关左侧。两个市场和远控 bundle 不再重复显示为普通插件卡片。开关仍调用官方管理器，选择保存在当前 Profile 中；已有 Profile 如果同时开启了两个市场，会提示用户选择其中一个。两个市场安装的 bundle 插件仍在普通列表中管理，可继续启用、停用和卸载。dshmarket 自己的插件停用逻辑保持原样。旧 `desktop-next.features.json` 中的选择只迁移一次到 `package.json`，以后启动遵循官方管理器的设置。
 
 侧边栏扩展入口复用原桌面的底部布局：多个入口纵向排列在设置上方，数量较多时在限定高度内滚动，保留工作区列表空间。
 
@@ -72,7 +72,7 @@ Next 的 macOS 打包与 Stable、Beta 一样，直接使用分层 `.icon` 源�
 
 ### 原生权限与 Computer Use
 
-Computer Use 旁的齿轮，以及**设置 → 桌面设置 → 授权设置**，都使用应用内授权弹窗，复用官方 Modal、Button 和 StateDot 组件。弹窗显示屏幕录制、macOS 辅助功能和麦克风的权限状态。打开弹窗时只查询权限；用户点击按钮后才请求系统授权或打开对应的系统隐私设置。macOS 系统设置中的权限变更可能需要重启应用。macOS 对屏幕录制和辅助功能没有“尚未询问”状态：两者在授权出现前都显示为未授权并保持可请求，屏幕录制的请求就是首次截屏尝试触发的系统弹窗；弹窗会说明开启屏幕录制后 macOS 会要求重新打开应用，以及系统设置中仍显示开启的辅助功能条目属于更早一次构建的签名，需要移除后重新添加。Windows 麦克风限制提供隐私设置入口；平台不支持的状态查询返回 `unknown`，不假定已经授权。
+Computer Use（Next）旁的齿轮，以及**设置 → 桌面设置 → 授权设置**，都使用应用内授权弹窗，复用官方 Modal、Button 和 StateDot 组件。弹窗显示屏幕录制、macOS 辅助功能和麦克风的权限状态。打开弹窗时只查询权限；用户点击按钮后才请求系统授权或打开对应的系统隐私设置。macOS 系统设置中的权限变更可能需要重启应用。macOS 对屏幕录制和辅助功能没有“尚未询问”状态：两者在授权出现前都显示为未授权并保持可请求，屏幕录制的请求就是首次截屏尝试触发的系统弹窗；弹窗会说明开启屏幕录制后 macOS 会要求重新打开应用，以及系统设置中仍显示开启的辅助功能条目属于更早一次构建的签名，需要移除后重新添加。Windows 麦克风限制提供隐私设置入口；平台不支持的状态查询返回 `unknown`，不假定已经授权。
 
 Next 向原生客户端插件和 Host 插件提供 Cordis 服务 `desktopPermissions`。从 `dsh-desktop-next/permissions` 导入类型，并注入 `desktopPermissions`；普通浏览器客户端没有此服务。方法为 `query(permission)`、`request(permission)` 和 `openSettings(permission)`，权限名称包括 `microphone`、`screen`、`accessibility`。结果包含 `status`、`canRequest` 和 `canOpenSettings`。
 
@@ -96,9 +96,11 @@ export async function record(ctx: Context) {
 
 屏幕共享应在用户点击“共享”时直接调用 `navigator.mediaDevices.getDisplayMedia({ video: true, audio: false })`。macOS 15 及以上使用 Electron 的系统选择器，其余系统使用原生菜单选择来源，不自动选择屏幕。系统选择器的单次共享授权可能不同于全局屏幕录制权限。权限服务本身不录制媒体，屏幕共享也不授予电脑输入控制能力。打包 Next 时保留产品自己的 `NSMicrophoneUsageDescription`，主应用和 Helper 签名直接使用固定上游 checkout 中的 `apps/desktop/scripts/macos-entitlements.plist`。语音输入通过 `getUserMedia` 触发 Chromium/macOS 的录音授权，语音插件旁不再提供额外权限按钮。
 
-内置官方 `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native@0.1.6-alpha.2`，**默认停用**。在**插件**页顶部的 Computer Use 分区中启用，并查看实际加载状态。入口复用官方插件槽位、开关和插件管理服务；Profile 条目 ID 为 `computer-use-cua-driver-native`。共享的 `computer-use` 注册服务已提供。操作和截图沿用现有对话工具卡片及图片附件；理解截图需要模型路由声明支持图片输入。开关左侧的齿轮打开授权弹窗。
+Computer Use（Next）是桌面端自带的电脑操作，基于内置的官方 `@deepseek-ai/dsh-experimental-computer-use-cua-driver-native`，**默认停用**。在**插件**页顶部的 Computer Use（Next）分区中启用，并查看实际加载状态。入口复用官方插件槽位、开关和插件管理服务；Profile 条目 ID 为 `computer-use-cua-driver-native`。操作和截图沿用现有对话工具卡片及图片附件；理解截图需要模型路由声明支持图片输入。开关左侧的齿轮打开授权弹窗。默认情况下，会话运行 `/computer-use` 后才加载其工具和提示词，`/computer-use off` 将其移除；也可在其插件页改为在所有会话中常驻。
 
-版本限定的 Yarn 补丁位于 `patches/dsh-experimental-computer-use-cua-driver-native@0.1.6-alpha.2.patch`。存在 `desktopPermissions` 时，`check_permissions` 通过桌面服务查询权限；`prompt: true` 为缺失的权限打开授权弹窗，再以 `prompt: false` 由驱动执行只读检查。驱动始终报告其实际权限，不根据桌面返回值假定授权成功。没有桌面服务时保留上游行为。固定的 `@trycua/cua-driver@0.28.0` 二进制、操作工具、图片处理和关闭流程保持上游实现。只能注册一个 provider，但这不会自动串行化多个会话对同一桌面的操作。
+版本限定的 Yarn 补丁位于 `patches/dsh-experimental-computer-use-cua-driver-native@0.1.6-alpha.2.patch`。存在 `desktopPermissions` 时，`check_permissions` 通过桌面服务查询权限；`prompt: true` 为缺失的权限打开授权弹窗，再以 `prompt: false` 由驱动执行只读检查。驱动始终报告其实际权限，不根据桌面返回值假定授权成功。没有桌面服务时保留上游行为。固定的 `@trycua/cua-driver@0.28.0` 二进制、操作工具、图片处理和关闭流程保持上游实现。每个 computer-use 注册服务只接受一个 provider，这不会自动串行化多个会话对同一桌面的操作。
+
+`computer-use` 注册服务条目和 provider 条目共用 `computerUse: computer-use-next` 隔离域，因此官方 Computer Use bundle `@deepseek-ai/dsh-cua-bundle`（仅 macOS，dsh 0.2.2 起提供）可以同时挂载自己的注册服务。官方 provider 服务 PTC 会话。在它服务的会话中，Computer Use（Next）不加载工具和提示词；`/computer-use` 仍记录开启状态，并提示该会话正在使用官方 Computer Use。其他会话、Windows 和 Linux、官方 helper 无法启动的 macOS 14 以下版本，以及没有加载官方 provider 的会话，继续使用 Computer Use（Next）。
 
 单元测试对安装后的补丁插件使用模拟原生 SDK。可选的原生验证要求 SDK 支持当前平台，会加载并关闭真实插件，不发送输入、不截图：
 
