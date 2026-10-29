@@ -18,7 +18,8 @@ import { preferredDesktopLocale, resolveDesktopLocale } from './menu-locale.ts'
 import { NativeLocaleStore } from './native-locale.ts'
 import { NextDesktopRuntime } from './desktop-runtime.ts'
 import { probeSystemProxy, type DesktopSystemProxyProbe } from './system-proxy.ts'
-import { resolveDesktopShellEnvironment } from './shell-environment.ts'
+import { readSystemProxyConfiguration } from './system-proxy-configuration.ts'
+import { resolveDesktopShellEnvironment, type DesktopShellEnvironmentResolution } from './shell-environment.ts'
 import { ensureUtf8Locale } from './shell-locale.ts'
 import { DEFAULT_PROFILE, NATIVE_ACCESS_HEADER, type DesktopCommand, type DesktopState, type DesktopSettingsPage } from './desktop-contract.ts'
 import { portsChanged, parsePreferences } from './desktop-preferences.ts'
@@ -53,6 +54,7 @@ import { isDesktopRendererStatus, NextRendererRecovery, type DesktopNavigationCa
 import { deElevateAtStartup, windowsElevation } from './windows-elevation.ts'
 import { createSandboxLaunchReporter, gpuLaunchFailure, rendererLaunchFailure } from './sandbox-launch.ts'
 import { startCrashReporting } from './crash-reporting.ts'
+import { hostCompileCacheDirectory, pruneHostCompileCaches } from './host-compile-cache.ts'
 
 // An elevated Windows launch restarts with the user's normal token before Chromium starts any child (#1487).
 const startupElevation = deElevateAtStartup({ platform: process.platform, packaged: app.isPackaged, argv: process.argv, executable: process.execPath })
@@ -96,7 +98,8 @@ const mainWindowState = new FileMainWindowStateStore(safeModeRequested ? electro
 app.setPath('userData', electronData)
 app.setPath('sessionData', electronData)
 protocol.registerSchemesAsPrivileged([{ scheme: 'dsh-app', privileges: {
-  standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true,
+  // As upstream Desktop registers it: `codeCache` lets V8 reuse compiled application scripts across launches.
+  standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true,
 } }])
 
 let mainWindow: BrowserWindow | undefined
@@ -144,11 +147,15 @@ if (ownsInstance) {
     startCrashReporting(crashReporter, { productName: 'DSH Desktop Beta', version, dsh: dshVersion })
   } catch (error) { console.error('Local crash reporting is unavailable', error) }
 }
+// Finder and Dock launches carry no login-shell exports. Reading them takes one login shell's startup
+// and no Electron API, so it overlaps Electron's own startup; the Host still waits for the result.
+const shellEnvironment = ownsInstance ? readShellEnvironment() : undefined
 const t = (zh: string, en: string): string => windowsLanguage.toLowerCase().startsWith('zh') ? zh : en
 /** The bundled interpreter payload of this CPU: beside the archive when packaged, prepared by `prepare:runtime` in development. */
 const primaryRuntime = join(app.isPackaged ? join(process.resourcesPath, 'runtime') : join(root, '.desktop-build', 'runtime'), process.arch, 'primary-runtime')
+const hostCompileCache = hostCompileCacheDirectory(normalElectronData, version, process.platform)
 const runtime = new NextDesktopRuntime({
-  home, root, primaryRuntime, executable: process.execPath, addresses: () => [...desktopLanAddresses()], systemProxy: () => systemProxy,
+  home, root, primaryRuntime, compileCache: hostCompileCache, executable: process.execPath, addresses: () => [...desktopLanAddresses()], systemProxy: () => systemProxy,
   prepareEnvironment: () => prepareHostEnvironment(),
   memoryProbe: {
     appMetrics: () => app.getAppMetrics(),
@@ -526,7 +533,11 @@ function resetRendererRecovery(owner: BrowserWindow): void {
     available: () => !quitting && !runtime.recoveryMode && mainWindow === owner && !owner.isDestroyed() && runtime.backend.state.phase !== 'error',
     reload: () => loadMainDocument(owner, 'recovery'),
     exhausted: detail => runtime.report(new Error(`Renderer recovery exhausted: ${detail}`), rendererHealthy ? 'renderer-runtime' : 'renderer-startup'),
-    healthy: () => { rendererHealthy = true },
+    healthy: () => {
+      rendererHealthy = true
+      // The interface is up: the Host may now mount the optional bundles it left out to get here sooner.
+      void runtime.admitDeferredBundles('renderer')
+    },
     record: (event, fields) => runtime.diagnostics.record({ source: 'renderer', event, fields }),
   })
 }
@@ -1108,20 +1119,34 @@ async function backupDataDirectory(): Promise<void> {
  * would run with the minimal system PATH and no locale. Recover the exports the Desktop variants
  * recover, then make sure a UTF-8 locale is set, as Terminal.app does for the shells it opens.
  * Probe the system proxy in parallel: a proxy client's "system proxy" switch sets no environment
- * variable, and only Chromium can evaluate it (PAC/WPAD included).
+ * variable, and only Chromium can evaluate it (PAC/WPAD included). The Host starts only after both,
+ * so the startup record carries how long each took.
  */
 function prepareHostEnvironment(): Promise<void> {
   return hostEnvironmentReady ??= (async () => {
-    const [shellEnvironment, resolvedProxy] = await Promise.all([
-      resolveDesktopShellEnvironment({ environment: process.env, home: app.getPath('home'), isPackaged: app.isPackaged, platform: process.platform }),
-      probeSystemProxy(session.defaultSession),
+    const configuration = readSystemProxyConfiguration(process.platform)
+    const [shell, proxy, proxyConfiguration] = await Promise.all([
+      shellEnvironment ?? readShellEnvironment(),
+      timed(probeSystemProxy(session.defaultSession, undefined, configuration)),
+      configuration,
     ])
-    for (const [name, value] of Object.entries(shellEnvironment.updates)) process.env[name] = value
+    for (const [name, value] of Object.entries(shell.value.updates)) process.env[name] = value
     const fallbackLocale = ensureUtf8Locale(process.env, process.platform, app.getPreferredSystemLanguages())
-    systemProxy = resolvedProxy
-    runtime.diagnostics.record({ source: 'desktop', event: 'shell-environment.resolved', fields: { source: shellEnvironment.source,
-      fallbackReason: shellEnvironment.fallbackReason ?? null, recovered: Object.keys(shellEnvironment.updates).join(' ') || null, fallbackLocale: fallbackLocale ?? null } })
+    systemProxy = proxy.value
+    runtime.diagnostics.record({ source: 'desktop', event: 'shell-environment.resolved', fields: { source: shell.value.source,
+      fallbackReason: shell.value.fallbackReason ?? null, recovered: Object.keys(shell.value.updates).join(' ') || null, fallbackLocale: fallbackLocale ?? null,
+      shellMs: shell.ms, systemProxyMs: proxy.ms, systemProxyConfiguration: proxyConfiguration } })
   })()
+}
+
+function readShellEnvironment(): Promise<Timed<DesktopShellEnvironmentResolution>> {
+  return timed(resolveDesktopShellEnvironment({ environment: process.env, home: app.getPath('home'), isPackaged: app.isPackaged, platform: process.platform }))
+}
+
+interface Timed<T> { readonly value: T; readonly ms: number }
+function timed<T>(operation: Promise<T>): Promise<Timed<T>> {
+  const started = performance.now()
+  return operation.then(value => ({ value, ms: Math.round(performance.now() - started) }))
 }
 
 async function main(): Promise<void> {
@@ -1323,6 +1348,10 @@ async function main(): Promise<void> {
   }
   native.createTray()
   updates.start()
+  // What earlier releases cached goes once this launch no longer competes with Host startup for the disk.
+  if (hostCompileCache !== undefined) {
+    setTimeout(() => { void pruneHostCompileCaches(hostCompileCache).catch(error => runtime.diagnostics.append(String(error), 'warn')) }, 60_000).unref()
+  }
   Menu.setApplicationMenu(process.platform === 'win32' ? null : Menu.buildFromTemplate([
     { label: 'DSH Desktop Beta', submenu: native.items() }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' },
   ]))
