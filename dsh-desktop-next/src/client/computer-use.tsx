@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { BundleInfo, PluginInfo } from '@deepseek-ai/dsh-api-remotes/client'
-import { Button, StateDot, Switch, Toast } from '@deepseek-ai/dsh-client-ui-primitives'
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
+import { Button, IconChevronRightOutlineRegular, StateDot, Switch, Toast } from '@deepseek-ai/dsh-client-ui-primitives'
 import { ComputerUsePluginArtwork } from './computer-use-command-ui.tsx'
 import { DesktopPermissionsButton, PermissionDetails } from './permissions.tsx'
 
@@ -225,7 +226,8 @@ export function ComputerUseSettings({ context, zh, mode = 'overview' }: { contex
           </li>
           {official !== undefined && <OfficialComputerUseRow t={t} official={official} provider={officialProvider}
             available={officialAvailable} disabled={loading || officialBusy || official.readOnlyReason !== undefined}
-            onChange={enabled => { void changeOfficial(enabled) }} />}
+            onChange={enabled => { void changeOfficial(enabled) }}
+            onOpen={() => { context.get('pluginNavigation')?.openBundle(OFFICIAL_BUNDLE) }} />}
         </ul>
       </section>
       {window.desktopNext?.permissions ? <PermissionDetails service={window.desktopNext.permissions} language={zh ? 'zh' : 'en'} />
@@ -238,32 +240,43 @@ export function ComputerUseSettings({ context, zh, mode = 'overview' }: { contex
 }
 
 /**
- * The switch for the official Computer Use bundle. Where it cannot run, it stays off and refuses input.
+ * The switch for the official Computer Use bundle. Where it cannot run, it stays off and refuses input. While the bundle
+ * is on, the whole row opens the bundle's own page; the switch keeps its own clicks.
  * @param props.official - the bundle as the plugin manager lists it.
  * @param props.provider - the bundle's macOS provider row, once the bundle has loaded.
  * @param props.available - whether this system can run the official Computer Use.
  * @param props.disabled - whether a read or write is in flight or the profile locks the bundle.
+ * @param props.onOpen - open the bundle's page in the Plugins panel.
  */
-function OfficialComputerUseRow({ t, official, provider, available, disabled, onChange }: {
+function OfficialComputerUseRow({ t, official, provider, available, disabled, onChange, onOpen }: {
   t: (chinese: string, english: string) => string
   official: BundleInfo
   provider: PluginInfo | undefined
   available: boolean
   disabled: boolean
   onChange: (enabled: boolean) => void
+  onOpen: () => void
 }) {
   const enabled = available && official.enabled
   const active = enabled && provider?.fiberPhase === 'active'
   const failed = enabled && !active && (official.error !== undefined || provider?.fiberPhase === 'failed')
   const state = !available ? t('当前系统不支持', 'Not supported on this system') : !enabled ? t('已关闭', 'Off')
     : active ? t('运行中', 'Running') : failed ? t('加载失败', 'Failed to load') : t('等待加载', 'Waiting to load')
-  return <li className="dshNextComponentRow" data-plugin-row="official-computer-use" {...(active ? {} : { 'data-state': 'off' })}>
+  const title = t('官方 Computer Use', 'Official Computer Use')
+  return <li className="dshNextComponentRow" data-plugin-row="official-computer-use"
+    {...(active ? {} : { 'data-state': 'off' })} {...(enabled ? { 'data-opens': '' } : {})}>
     <div className="dshNextComponentRowLine">
       <span className="dshNextComponentRowIcon" aria-hidden="true">
         <ComputerUsePluginArtwork size={30} />
       </span>
       <div className="dshNextComponentRowMain">
-        <span className="dshNextComponentRowId">{t('官方 Computer Use', 'Official Computer Use')}</span>
+        {enabled
+          ? <button type="button" className="dshNextComponentRowOpen" onClick={onOpen}
+            aria-label={t('查看官方 Computer Use 的插件详情', 'View the official Computer Use plugin details')}>
+            <span className="dshNextComponentRowId">{title}</span>
+            <IconChevronRightOutlineRegular className="dshNextComponentRowOpenIcon" />
+          </button>
+          : <span className="dshNextComponentRowId">{title}</span>}
         <span className="dshNextComponentRowModule">
           {t(
             '仅支持 macOS 14 及以上的 PTC 模式。开启后，PTC 模式的会话改用官方 Computer Use，取代 Computer Use（Next）；其他模式仍使用 Computer Use（Next）。',
@@ -276,9 +289,11 @@ function OfficialComputerUseRow({ t, official, provider, available, disabled, on
         <StateDot state={active ? 'done' : failed ? 'error' : 'idle'} />
         {state}
       </span>
-      <Switch label={t('启用官方 Computer Use', 'Enable official Computer Use')} checked={enabled} disabled={!available || disabled}
-        title={available ? undefined : t('官方 Computer Use 仅支持 macOS 14 及以上', 'The official Computer Use requires macOS 14 or later')}
-        onChange={onChange} />
+      <span className="dshNextComponentRowSwitch">
+        <Switch label={t('启用官方 Computer Use', 'Enable official Computer Use')} checked={enabled} disabled={!available || disabled}
+          title={available ? undefined : t('官方 Computer Use 仅支持 macOS 14 及以上', 'The official Computer Use requires macOS 14 or later')}
+          onChange={onChange} />
+      </span>
     </div>
   </li>
 }

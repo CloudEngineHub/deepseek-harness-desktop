@@ -20,7 +20,7 @@ vi.mock('react', async importOriginal => ({
 vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({
   Button: 'button', PluginArtworkDefault: 'svg', PluginArtworkSubagent: 'svg', Switch: 'input', StateDot: 'span',
   Toast: 'aside', Modal: 'dialog', IconSettingsOutlineRegular: 'svg',
-  IconWarningOutlineRegular: 'svg', Tag: 'span',
+  IconWarningOutlineRegular: 'svg', IconChevronRightOutlineRegular: 'svg', Tag: 'span',
 }))
 import { registerPluginControls } from '../src/client/plugin-controls.tsx'
 import { ComputerUseSettings } from '../src/client/computer-use.tsx'
@@ -500,7 +500,12 @@ async function mountOfficialComputerUse(officialSupported: boolean, bundle: Reco
       return { ok: true as const, value: { changed: true, application: 'applied', stage: 'enable', target: bundle.name, enabled } }
     }),
   }
-  const ctx: any = { on: () => () => {}, remote: { $on: () => () => {}, pluginManager } }
+  const navigation = { openBundle: vi.fn(), openList: vi.fn() }
+  const ctx: any = {
+    on: () => () => {},
+    get: (name: string) => name === 'pluginNavigation' ? navigation : undefined,
+    remote: { $on: () => () => {}, pluginManager },
+  }
   const page = () => {
     hooks.cursor = 0
     return ComputerUseSettings({ context: ctx as Context, zh: true, mode: 'page' }) as unknown as Node
@@ -521,10 +526,11 @@ async function mountOfficialComputerUse(officialSupported: boolean, bundle: Reco
       count: nodes(tree).find(node => node.props.className === 'dshNextComponentSectionCount')!.props.children as string,
       row: body,
       toggle: body === undefined ? undefined : nodes(body).find(node => node.type === 'input' && node.props.label === '启用官方 Computer Use'),
+      open: body === undefined ? undefined : nodes(body).find(node => node.type === 'button' && node.props.className === 'dshNextComponentRowOpen'),
       state: body === undefined ? undefined : nodes(body).find(node => node.props.className === 'dshNextComponentRowState')!.props.children as unknown[],
     }
   }
-  return { pluginManager, plugins, settle, view }
+  return { pluginManager, plugins, navigation, settle, view }
 }
 
 const OFFICIAL_BUNDLE_ROW = {
@@ -543,13 +549,22 @@ it('switches the official Computer Use bundle on the Computer Use (Next) page on
   expect(view.toggle!.props.title).toBeUndefined()
   expect(view.state).toContain('已关闭')
   expect(view.count).toBe('共 2 个 · 1 运行中 · 1 已停用')
+  expect(view.open).toBeUndefined()
+  expect(view.row!.props['data-opens']).toBeUndefined()
 
   view.toggle!.props.onChange(true)
   await new Promise(resolve => setTimeout(resolve, 0))
   expect(app.pluginManager.setBundleEnabled).toHaveBeenCalledWith('@deepseek-ai/dsh-cua-bundle', true)
+  expect(app.navigation.openBundle).not.toHaveBeenCalled()
   view = app.view()
   expect(view.toggle!.props.checked).toBe(true)
   expect(view.state).toContain('等待加载')
+
+  // Once on, the row opens the official bundle's page in the Plugins panel.
+  expect(view.row!.props['data-opens']).toBeDefined()
+  expect(view.open!.props['aria-label']).toBe('查看官方 Computer Use 的插件详情')
+  view.open!.props.onClick()
+  expect(app.navigation.openBundle).toHaveBeenCalledExactlyOnceWith('@deepseek-ai/dsh-cua-bundle')
 
   // The bundle's macOS provider comes up after the plugin manager reloads the Profile.
   app.plugins.push({ entryId: 'include:cua-macos', moduleName: '@deepseek-ai/dsh-experimental-cua-macos', enabled: true, fiberPhase: 'active' })
@@ -562,7 +577,10 @@ it('switches the official Computer Use bundle on the Computer Use (Next) page on
   view.toggle!.props.onChange(false)
   await new Promise(resolve => setTimeout(resolve, 0))
   expect(app.pluginManager.setBundleEnabled).toHaveBeenLastCalledWith('@deepseek-ai/dsh-cua-bundle', false)
-  expect(app.view().toggle!.props.checked).toBe(false)
+  view = app.view()
+  expect(view.toggle!.props.checked).toBe(false)
+  expect(view.open).toBeUndefined()
+  expect(app.navigation.openBundle).toHaveBeenCalledOnce()
 })
 
 it('greys out the official Computer Use switch, off and locked, where it cannot run', async () => {
@@ -575,6 +593,8 @@ it('greys out the official Computer Use switch, off and locked, where it cannot 
   expect(view.toggle!.props.title).toBe('官方 Computer Use 仅支持 macOS 14 及以上')
   expect(view.state).toContain('当前系统不支持')
   expect(view.count).toBe('共 2 个 · 1 运行中 · 1 已停用')
+  expect(view.open).toBeUndefined()
+  expect(view.row!.props['data-opens']).toBeUndefined()
 })
 
 it('keeps the official Computer Use switch locked before macOS 14, where the plugin manager still lists the bundle', async () => {
