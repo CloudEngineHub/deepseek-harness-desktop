@@ -100,7 +100,7 @@ Computer Use（Next）是桌面端自带的电脑操作，基于内置的官方 
 
 版本限定的 Yarn 补丁位于 `patches/dsh-experimental-computer-use-cua-driver-native@0.1.6-alpha.2.patch`。存在 `desktopPermissions` 时，`check_permissions` 通过桌面服务查询权限；`prompt: true` 为缺失的权限打开授权弹窗，再以 `prompt: false` 由驱动执行只读检查。驱动始终报告其实际权限，不根据桌面返回值假定授权成功。没有桌面服务时保留上游行为。固定的 `@trycua/cua-driver@0.28.0` 二进制、操作工具、图片处理和关闭流程保持上游实现。每个 computer-use 注册服务只接受一个 provider，这不会自动串行化多个会话对同一桌面的操作。
 
-`computer-use` 注册服务条目和 provider 条目共用 `computerUse: computer-use-next` 隔离域，因此官方 Computer Use bundle `@deepseek-ai/dsh-cua-bundle`（仅 macOS，dsh 0.2.2 起提供）可以同时挂载自己的注册服务。官方 provider 服务 PTC 会话。在它服务的会话中，Computer Use（Next）不加载工具和提示词；`/computer-use` 仍记录开启状态，并提示该会话正在使用官方 Computer Use。其他会话、Windows 和 Linux、官方 helper 无法启动的 macOS 14 以下版本，以及没有加载官方 provider 的会话，继续使用 Computer Use（Next）。
+`computer-use` 注册服务条目和 provider 条目共用 `computerUse: computer-use-next` 隔离域，因此官方 Computer Use bundle `@deepseek-ai/dsh-cua-bundle`（仅 macOS，dsh 0.2.2 起提供）可以同时挂载自己的注册服务。官方 provider 服务 PTC 会话。在它服务的会话中，Computer Use（Next）不加载工具和提示词；`/computer-use` 仍记录开启状态，并提示该会话正在使用官方 Computer Use。其他会话、Windows 和 Linux、官方 helper 无法启动的 macOS 14 以下版本，以及没有加载官方 provider 的会话，继续使用 Computer Use（Next）。官方 bundle 的发布版默认隐藏，桌面端仍在**插件**页列出它。
 
 官方包只发布 helper 的 Swift 源码，不带编译好的 helper，已安装的包也不会自己编译。因此依赖该 bundle 的桌面包会用 provider 在源码 checkout 中使用的同一组 `xcrun swift build` 参数，把 helper 编译到 provider 包目录下的 `native/bin/darwin-<arch>/dsh-cua-native`。开发启动时由 `prepare:runtime` 编译本机 CPU 的 helper；macOS 打包时编译两种 CPU 的 helper，纳入 universal 原生文件清单检查，并把 provider 解包放在归档旁。两者都需要 Xcode 或 Command Line Tools。不依赖该 bundle 的包不编译任何内容。
 
