@@ -36,6 +36,17 @@ export function officialHelperUnsupported(platform: NodeJS.Platform = process.pl
   return platform === 'darwin' && Number.parseInt(osRelease, 10) < 23
 }
 
+/**
+ * Whether the official Computer Use can run here at all: macOS 14 (Darwin 23) or later. The Plugins page
+ * offers its switch only then.
+ * @param platform - Host platform.
+ * @param osRelease - Kernel release as `os.release()` reports it.
+ * @returns true on macOS 14 and later.
+ */
+export function officialComputerUseSupported(platform: NodeJS.Platform = process.platform, osRelease: string = release()): boolean {
+  return platform === 'darwin' && !officialHelperUnsupported(platform, osRelease)
+}
+
 export interface ComputerUseCommandConfig {
   commandMode: boolean
 }
@@ -126,7 +137,7 @@ export function installComputerUseCommand(ctx: Context, profileDir: string): Com
       fetch: async (request: Request): Promise<Response> => {
         if (request.method === 'GET') {
           return Response.json(
-            { commandMode: controller.getCommandMode() },
+            { commandMode: controller.getCommandMode(), officialSupported: officialComputerUseSupported() },
             { headers: { 'cache-control': 'no-store' } },
           )
         }

@@ -23,6 +23,7 @@ import {
   OFFICIAL_CUA_TOOL,
   foldSessionComputerUseEnabled,
   installComputerUseCommand,
+  officialComputerUseSupported,
   officialHelperUnsupported,
   readComputerUseCommandConfig,
   type ComputerUseCommandController,
@@ -332,7 +333,7 @@ describe('installComputerUseCommand', () => {
       new Request(`http://localhost${COMPUTER_USE_SETTINGS_ROUTE}`, { method: 'GET' }),
     )
     expect(getRes.status).toBe(200)
-    expect(await getRes.json()).toEqual({ commandMode: true })
+    expect(await getRes.json()).toEqual({ commandMode: true, officialSupported: officialComputerUseSupported() })
 
     // Turn off commandMode via POST /api/desktop-next/computer-use
     const postRes = await route!.fetch(
@@ -476,6 +477,14 @@ it('keeps Computer Use (Next) where the official helper cannot start, before mac
   expect(officialHelperUnsupported('darwin', '25.1.0')).toBe(false)
   expect(officialHelperUnsupported('linux', '6.8.0')).toBe(false)
   expect(officialHelperUnsupported('win32', '10.0.26100')).toBe(false)
+})
+
+it('offers the official Computer Use switch only on macOS 14 and later', () => {
+  expect(officialComputerUseSupported('darwin', '22.6.0')).toBe(false)
+  expect(officialComputerUseSupported('darwin', '23.0.0')).toBe(true)
+  expect(officialComputerUseSupported('darwin', '25.1.0')).toBe(true)
+  expect(officialComputerUseSupported('linux', '6.8.0')).toBe(false)
+  expect(officialComputerUseSupported('win32', '10.0.26100')).toBe(false)
 })
 
 describe('computer-use-command-ui', () => {
