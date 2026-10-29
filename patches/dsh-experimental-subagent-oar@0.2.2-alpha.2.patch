@@ -1,12 +1,15 @@
 diff --git a/cordis.patch.yml b/cordis.patch.yml
 new file mode 100644
-index 0000000..b6f9833
+index 0000000..f1e52c0
 --- /dev/null
 +++ b/cordis.patch.yml
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,31 @@
 +# DSH Desktop ships this provider as an optional bundle. The rows are the
-+# README's example composition: Codex and Claude Code providers with the
-+# example's native permission arguments, and the subagent_oar tool.
++# README's example composition: Codex and Claude Code providers and the
++# subagent_oar tool. Claude Code runs in acceptEdits instead of the example's
++# dontAsk: it can change files in the task's directory, as Codex can in its
++# workspace-write sandbox, and anything else that would ask for approval is
++# refused.
 +- insert:
 +    - id: experimental-subagent-oar-codex
 +      name: '@deepseek-ai/dsh-experimental-subagent-oar'
@@ -23,7 +26,7 @@ index 0000000..b6f9833
 +        providerName: oar-claude
 +        launchArgs:
 +          - --permission-mode
-+          - dontAsk
++          - acceptEdits
 +          - --permission-prompts
 +          - none
 +    - id: tool-subagent-oar

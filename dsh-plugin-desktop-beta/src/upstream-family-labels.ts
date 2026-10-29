@@ -15,7 +15,8 @@ export const OFFICIAL_PLUGIN_INDEX = {
 
 /**
  * The official OAR subagent provider, as its locale files present it. Desktop ships it as an optional bundle whose
- * rows are the README's Codex and Claude Code example (`patches/dsh-experimental-subagent-oar@<version>.patch`).
+ * rows are the README's Codex and Claude Code example, with Claude Code accepting file edits instead of running
+ * read-only (`patches/dsh-experimental-subagent-oar@<version>.patch`).
  */
 export const OFFICIAL_OAR_SUBAGENTS = {
   bundle: '@deepseek-ai/dsh-experimental-subagent-oar',

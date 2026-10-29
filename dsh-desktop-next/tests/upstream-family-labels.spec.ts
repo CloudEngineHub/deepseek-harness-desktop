@@ -33,14 +33,19 @@ it.runIf(oarSubagents !== undefined)('names OAR subagents exactly as the install
   expect(Object.hasOwn(installation.dependencies, card.bundle)).toBe(true)
 })
 
-it.runIf(oarSubagents !== undefined)('composes OAR subagents exactly as the provider README example does', () => {
+it.runIf(oarSubagents !== undefined)('composes OAR subagents as the provider README example does, with Claude Code accepting file edits', () => {
   const manifest = require.resolve(`${oarSubagents!.bundle}/package.json`)
   const bundle = JSON.parse(readFileSync(manifest, 'utf8')).dsh?.bundle
   expect(bundle).toEqual({ patch: './cordis.patch.yml' })
   const example = /```yaml\n(- insert:\n[\s\S]*?)```/u.exec(readFileSync(join(dirname(manifest), 'README.md'), 'utf8'))?.[1]
   expect(example).toBeDefined()
+  const expected = parse(example!)
+  // The example keeps Claude Code read-only with dontAsk; Desktop lets it change files in the task's directory.
+  const claude = expected[0].insert.find((row: { id: string }) => row.id === 'experimental-subagent-oar-claude')
+  expect(claude.config.launchArgs).toEqual(['--permission-mode', 'dontAsk', '--permission-prompts', 'none'])
+  claude.config.launchArgs[1] = 'acceptEdits'
   const rows = parse(readFileSync(join(dirname(manifest), bundle.patch), 'utf8'))
-  expect(rows).toEqual(parse(example!))
+  expect(rows).toEqual(expected)
   // The Loader resolves each row's module from the installation.
   for (const row of rows[0].insert) expect(require.resolve(row.name)).toBeTruthy()
 })

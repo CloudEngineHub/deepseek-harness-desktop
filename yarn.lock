@@ -7110,7 +7110,7 @@ __metadata:
 
 "@deepseek-ai/dsh-experimental-subagent-oar@patch:@deepseek-ai/dsh-experimental-subagent-oar@file%3Avendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-experimental-subagent-oar-0.2.2-alpha.2.tgz#./patches/dsh-experimental-subagent-oar@0.2.2-alpha.2.patch::locator=deepseek-harness-desktop%40workspace%3A.":
   version: 0.2.2-alpha.2
-  resolution: "@deepseek-ai/dsh-experimental-subagent-oar@patch:@deepseek-ai/dsh-experimental-subagent-oar@file%3Avendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-experimental-subagent-oar-0.2.2-alpha.2.tgz%23vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-experimental-subagent-oar-0.2.2-alpha.2.tgz%3A%3Ahash=abb746&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-experimental-subagent-oar@0.2.2-alpha.2.patch::version=0.2.2-alpha.2&hash=353392&locator=deepseek-harness-desktop%40workspace%3A."
+  resolution: "@deepseek-ai/dsh-experimental-subagent-oar@patch:@deepseek-ai/dsh-experimental-subagent-oar@file%3Avendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-experimental-subagent-oar-0.2.2-alpha.2.tgz%23vendor/dsh-runtime/0.2.2-alpha.2/deepseek-ai-dsh-experimental-subagent-oar-0.2.2-alpha.2.tgz%3A%3Ahash=abb746&locator=deepseek-harness-desktop%2540workspace%253A.#./patches/dsh-experimental-subagent-oar@0.2.2-alpha.2.patch::version=0.2.2-alpha.2&hash=7c6764&locator=deepseek-harness-desktop%40workspace%3A."
   dependencies:
     "@agentclientprotocol/sdk": "npm:^1.4.0"
     "@deepseek-ai/dsh-brand": "npm:0.2.2-alpha.2"
@@ -7128,7 +7128,7 @@ __metadata:
     "@deepseek-ai/dsh-session": 0.2.2-alpha.2
     "@deepseek-ai/dsh-subagent": 0.2.2-alpha.2
     "@deepseek-ai/dsh-subprocess": 0.2.2-alpha.2
-  checksum: 10c0/ad3553f8f6c6eca28b7bfd87456e437a5da3e05036f6eeccee2c449a5098f87184646a5574c53ece22a7b73f798d8d977b70ba3957b4f2ebbefe721f7a75f8ab
+  checksum: 10c0/723d8415bb73bf70298241b6f7b300bdfce2d9333f2f47fc9399d625d886d8b934aaa0fc3fcfed01bda38c36940fd0fac728368536d7e263d388b3c47e2b9cf7
   languageName: node
   linkType: hard
 
