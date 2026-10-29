@@ -24,6 +24,11 @@ import { createOperationHistory } from './upstream-family.ts'
 import { HOST_COMPILE_CACHE_ENV } from './host-compile-cache.ts'
 import type { DesktopFailureStage } from '../../dsh-plugin-desktop/src/recovery-copy.ts'
 
+/** A Host mounts its deferred optional bundles this long after `ready` even when no window reports a mounted interface. */
+const DEFERRED_ADMISSION_TIMEOUT_MS = 5_000
+/** What let a Host mount its deferred optional bundles: the window's interface, the timeout, or an explicit request. */
+export type DeferredAdmissionTrigger = 'renderer' | 'timeout' | 'request'
+
 interface RuntimeOptions {
   home: string
   /** Disposable desktop settings; recovery continues to address the original home. */
@@ -76,6 +81,8 @@ export class NextDesktopRuntime {
   lan: DesktopLanHttpsRuntime | undefined
   private safeHome: string | undefined
   private hostProcess: DesktopHostProcess | undefined
+  /** The running Host's one-shot admission of its deferred optional bundles, while it has any. */
+  private admitDeferred: ((trigger: DeferredAdmissionTrigger) => Promise<void>) | undefined
   /** Where a backend failure stops the Desktop: preparation, Host startup, or a Host that was running. */
   private hostStage: DesktopFailureStage = 'host-boot'
   private failureReport: DesktopFailureReport | undefined
@@ -195,6 +202,16 @@ export class NextDesktopRuntime {
       if (wasSafe) this.preferences = new DesktopPreferenceStore(this.options.home).read()
     }
     await this.start()
+  }
+
+  /**
+   * Let the running Host mount the optional bundles it left out of its first composition (host/deferred-bundles.ts).
+   * The main window calls this once its interface has mounted; each Host acts on its first call only.
+   * @param trigger - What allowed the admission, for diagnostics.
+   * @returns after the Host answered, whether it mounted them or recorded their failure; at once without a Host that deferred any.
+   */
+  admitDeferredBundles(trigger: DeferredAdmissionTrigger = 'renderer'): Promise<void> {
+    return this.admitDeferred?.(trigger) ?? Promise.resolve()
   }
 
   /** Native repair tools target the original Profile; app tools follow the running environment. */
@@ -382,6 +399,14 @@ export class NextDesktopRuntime {
       prepareCertificate: async () => ({ certificate: await options.certificate(addresses) }) })
     this.lan = lan
     let stopped = false
+    let admissionTimer: ReturnType<typeof setTimeout> | undefined
+    let admission: Promise<void> | undefined
+    const admit = (trigger: DeferredAdmissionTrigger): Promise<void> => admission ??= (() => {
+      clearTimeout(admissionTimer)
+      const end = this.diagnostics.operation('desktop', 'deferred-bundles.admit', { trigger })
+      // A failed admission leaves those plugins failed in the plugin manager; the Host keeps running.
+      return host.admitDeferredBundles().then(() => { end() }, (error: unknown) => { end(error) })
+    })()
     const host = new DesktopHostProcess(options.executable, options.root, new NextProfiles(actualHome).directory(profile), undefined,
       { ...process.env, DSH_HOME: actualHome, DSH_NEXT_NATIVE_TOKEN: token,
         DSH_NEXT_PREFERENCES: JSON.stringify(effective), DSH_NEXT_TRUSTED_HOSTS: JSON.stringify(addresses),
@@ -422,11 +447,18 @@ export class NextDesktopRuntime {
           started()
           // From here a Host failure stops a running Desktop rather than its startup.
           this.hostStage = 'host-runtime'
+          if (ready.deferred === true) {
+            this.admitDeferred = admit
+            admissionTimer = setTimeout(() => { void admit('timeout') }, DEFERRED_ADMISSION_TIMEOUT_MS)
+            admissionTimer.unref()
+          }
           this.diagnostics.append(`Host ready: ${profile}${this.safeMode ? ' (safe mode)' : ''}`)
         } catch (error) { started(error); throw error }
       },
       stop: async (): Promise<void> => {
         stopped = true
+        clearTimeout(admissionTimer)
+        if (this.admitDeferred === admit) this.admitDeferred = undefined
         this.auth = undefined
         const edgeStopped = this.diagnostics.operation('desktop', 'lan.stop')
         try { await lan.stop(); edgeStopped() } catch (error) { edgeStopped(error); throw error }
