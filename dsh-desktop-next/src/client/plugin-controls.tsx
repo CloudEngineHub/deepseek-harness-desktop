@@ -21,6 +21,8 @@ import {
   type BuiltInMarketKey, type MarketName, type MarketRuntimeState,
 } from './market-toggle.ts'
 import { OFFICIAL_OAR_SUBAGENTS, OFFICIAL_PLUGIN_INDEX } from '../upstream-family-labels.ts'
+import type { LaunchPresetBundle } from '../launch-presets.ts'
+import { registerLaunchPresets } from './launch-presets.tsx'
 
 const REMOTE = '@agents-anywhere/dsh-bridge-next'
 const COMPUTER_ITEM = 'desktop-next-computer-use'
@@ -36,6 +38,8 @@ export interface OfficialBundleCard {
 
 /** OAR subagents, when the followed release ships the provider. */
 const OAR_SUBAGENTS: OfficialBundleCard | undefined = OFFICIAL_OAR_SUBAGENTS
+/** Launch choices of the OAR provider rows, on their configuration pages. */
+const OAR_LAUNCH_PRESETS: LaunchPresetBundle | undefined = OFFICIAL_OAR_SUBAGENTS
 
 interface BundlesCacheEntry {
   loaded: boolean
@@ -94,6 +98,7 @@ export function registerPluginControls(ctx: Context): void {
       }, ComputerUseActions)
       return () => { actions(); hiddenItem(); item(); for (const off of hidden) off(); dispose() }
     })
+    if (OAR_LAUNCH_PRESETS !== undefined) registerLaunchPresets(inner, OAR_LAUNCH_PRESETS)
   })
 }
 

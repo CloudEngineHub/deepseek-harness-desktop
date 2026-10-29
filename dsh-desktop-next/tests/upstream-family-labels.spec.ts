@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { expect, it } from 'vitest'
 import { parse } from 'yaml'
 import type { OfficialBundleCard } from '../src/client/plugin-controls.tsx'
+import type { LaunchPresetBundle } from '../src/launch-presets.ts'
 import { OFFICIAL_OAR_SUBAGENTS, OFFICIAL_PLUGIN_INDEX } from '../src/upstream-family-labels.ts'
 
 const require = createRequire(import.meta.url)
@@ -12,6 +13,7 @@ const meta = (locale: 'zh' | 'en'): { title?: unknown; description?: unknown } =
 // Releases before 0.2.2 still call the bundle a plugin market; Desktop shows the 0.2.2 name ahead of them.
 const BEFORE_0_2_2 = { zh: '自定义插件市场', en: 'Custom plugin markets' }
 const oarSubagents: OfficialBundleCard | undefined = OFFICIAL_OAR_SUBAGENTS
+const oarPresets: LaunchPresetBundle | undefined = OFFICIAL_OAR_SUBAGENTS
 
 it('names the official plugin index bundle exactly as the installed release does from 0.2.2 on', () => {
   for (const locale of ['zh', 'en'] as const) {
@@ -48,4 +50,16 @@ it.runIf(oarSubagents !== undefined)('composes OAR subagents as the provider REA
   expect(rows).toEqual(expected)
   // The Loader resolves each row's module from the installation.
   for (const row of rows[0].insert) expect(require.resolve(row.name)).toBeTruthy()
+})
+
+it.runIf(oarPresets !== undefined)('offers launch choices whose shipped one is each provider row as the bundle declares it', () => {
+  const bundle = oarPresets!
+  const manifest = require.resolve(`${bundle.bundle}/package.json`)
+  const declared: { id: string; config: { launchArgs: string[] } }[] = parse(readFileSync(join(dirname(manifest), 'cordis.patch.yml'), 'utf8'))[0].insert
+  for (const row of bundle.rows) {
+    const shipped = row.presets.filter(preset => preset.shipped === true)
+    expect(shipped, row.id).toHaveLength(1)
+    expect(shipped[0]!.launchArgs, row.id).toEqual(declared.find(item => item.id === row.id)?.config.launchArgs)
+    expect(new Set(row.presets.map(preset => preset.id)).size, row.id).toBe(row.presets.length)
+  }
 })

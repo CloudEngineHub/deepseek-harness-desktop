@@ -25,6 +25,10 @@ const STYLES = `
 .dshNextPluginCardActions .dshNextPluginDetail, .dshNextPluginCardActions .dshNextComputerUse { display: block; }
 .dshNextPluginCardActions .dshNextPluginActions { flex-wrap: nowrap; }
 .dshNextPluginDetail, .dshNextComputerUse { display: grid; gap: 12px; }
+.dshNextLaunchPresets { display: grid; gap: 12px; max-width: 720px; color: var(--dsw-alias-label-primary); }
+.dshNextLaunchPresets p { margin: 0; }
+.dshNextLaunchPresetsTitle { margin: 0; font-size: 14px; line-height: 22px; font-weight: 500; }
+.dshNextLaunchPresetChoices { display: grid; gap: 8px; }
 .dshNextPluginActions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dshNextPluginCardActions [role="status"], .dshNextPluginCardActions [role="alert"] { display: block; max-width: 220px; white-space: normal; }
 button.dshNextSettingsGear { width: 28px; padding: 0; }

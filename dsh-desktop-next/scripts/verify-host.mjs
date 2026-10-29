@@ -126,6 +126,25 @@ try {
       const plugin = plugins.find(plugin => plugin.entryId !== undefined && plugin.entryId === row.entryId)
       assert.equal(plugin?.fiberPhase, 'active', `${name} row ${row.rowId}: ${JSON.stringify(plugin)}`)
     }
+    // Rows with launch choices switch through the configuration editor; the shipped choice leaves no Profile override.
+    const launchPresets = async (body) => {
+      const response = await fetch(`${origin}/api/desktop-next/launch-presets`, body === undefined ? { headers: { cookie, origin } }
+        : { method: 'POST', headers: { cookie, origin, 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      return { status: response.status, body: await response.json() }
+    }
+    const profilePatch = () => readFileSync(join(manager.directory('desktop'), 'cordis.patch.yml'), 'utf8')
+    for (const state of (await launchPresets()).body.rows.filter(state => bundle.rows.some(row => row.rowId === state.row))) {
+      assert.ok(state.active && state.preset !== null, `${name} row ${state.row} must start with its shipped choice: ${JSON.stringify(state)}`)
+      const other = state.choices.find(choice => choice !== state.preset)
+      const switched = await launchPresets({ row: state.row, preset: other })
+      assert.equal(switched.status, 200, JSON.stringify(switched.body))
+      assert.equal(switched.body.rows.find(item => item.row === state.row).preset, other)
+      assert.ok(profilePatch().includes(`id: ${state.row}`), profilePatch())
+      const restored = await launchPresets({ row: state.row, preset: state.preset })
+      assert.equal(restored.body.rows.find(item => item.row === state.row).preset, state.preset, JSON.stringify(restored.body))
+      assert.ok(!profilePatch().includes(`id: ${state.row}`), profilePatch())
+      console.log(`verify-host: ${name} row ${state.row} switched to ${other} and back through the configuration editor`)
+    }
     const disabled = await rpc('setBundleEnabled', { name, enabled: false })
     assert.equal(disabled.application, 'applied', JSON.stringify(disabled))
     console.log(`verify-host: optional bundle ${name} started its ${String(bundle.rows.length)} rows`)
