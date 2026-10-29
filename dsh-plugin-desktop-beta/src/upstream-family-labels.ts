@@ -12,3 +12,16 @@ export const OFFICIAL_PLUGIN_INDEX = {
     en: 'Adds a Discover tab to Plugins, where you browse and install plugins from plugin indexes you add.',
   },
 } as const
+
+/**
+ * The official OAR subagent provider, as its locale files present it. Desktop ships it as an optional bundle whose
+ * rows are the README's Codex and Claude Code example (`patches/dsh-experimental-subagent-oar@<version>.patch`).
+ */
+export const OFFICIAL_OAR_SUBAGENTS = {
+  bundle: '@deepseek-ai/dsh-experimental-subagent-oar',
+  title: { zh: 'OAR 子智能体', en: 'OAR subagents' },
+  description: {
+    zh: '通过 OAR 向已安装的编程智能体委派任务，并提供 Codex 和 Claude Code 配置。',
+    en: 'Delegate tasks to installed coding agents through OAR, with Codex and Claude Code configurations.',
+  },
+} as const

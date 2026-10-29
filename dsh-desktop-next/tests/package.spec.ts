@@ -48,10 +48,11 @@ it('archives the application like upstream Desktop while keeping fuses and nativ
   expect(next.build.afterAllArtifactBuild).toBe('./scripts/verify-fuses.ts')
   expect(next.build.electronFuses).toEqual(stable.build.electronFuses)
   // Stable's rule already keeps the interpreter payloads and the wheels' .dylibs directories, identical across the two
-  // CPU builds. Next adds its own per-CPU native packages, pnpm's reflink addons from its bundled dist/node_modules and
-  // the official Computer Use helpers, which both CPU builds carry for both CPUs.
+  // CPU builds. Next adds its own per-CPU native packages, pnpm's reflink addons from its bundled dist/node_modules,
+  // the official Computer Use helpers and the terminal helpers of `@earendil-works/pi-tui`, which Beta's OAR subagents
+  // depend on; both CPU builds carry these for both CPUs.
   expect(next.build.mac.x64ArchFiles).toBe(stable.build.mac.x64ArchFiles
-    .replace('sherpa-onnx-darwin-*/**}', 'sherpa-onnx-darwin-*/**,@trycua/cua-driver-darwin-*/**,@ubjs/node-darwin-*/**,@reflink/reflink-darwin-*/**,@deepseek-ai/dsh-experimental-cua-macos/native/bin/**}'))
+    .replace('sherpa-onnx-darwin-*/**}', 'sherpa-onnx-darwin-*/**,@trycua/cua-driver-darwin-*/**,@ubjs/node-darwin-*/**,@reflink/reflink-darwin-*/**,@deepseek-ai/dsh-experimental-cua-macos/native/bin/**,@earendil-works/pi-tui/native/darwin/prebuilds/**}'))
   // Both CPU payloads ride beside the archive as extra resources; electron-builder must not re-sign the pre-signed payloads.
   // macOS also carries the manifest copy the updaters shipped in 2.0.14-next through 2.0.17-next read beside the archive.
   expect(next.build.mac.extraResources).toEqual([{ from: '.desktop-build/runtime', to: 'runtime' }, { from: '.desktop-build/payload/package.json', to: 'app/package.json' }])

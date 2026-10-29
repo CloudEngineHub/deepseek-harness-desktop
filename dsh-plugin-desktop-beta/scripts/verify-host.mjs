@@ -112,6 +112,24 @@ try {
     assert.equal(bundle.error, undefined)
     for (const rowId of rowIds) assert.ok(bundle.rows.some(row => row.rowId === rowId), JSON.stringify(bundle))
   }
+  // Official packages the installation declares among its optional bundles (Beta's OAR subagents) start switched
+  // off, and switching one on starts every row its patch inserts.
+  const installation = JSON.parse(readFileSync(NEXT_PACKAGE, 'utf8'))
+  for (const name of installation.dsh.optionalBundles.filter(name => name.startsWith('@deepseek-ai/'))) {
+    const bundle = (await rpc('listBundles')).find(row => row.name === name)
+    assert.ok(bundle?.official && bundle.optional && !bundle.enabled && bundle.rows.length > 0, JSON.stringify(bundle))
+    assert.equal(bundle.error, undefined, JSON.stringify(bundle))
+    const enabled = await rpc('setBundleEnabled', { name, enabled: true })
+    assert.equal(enabled.application, 'applied', JSON.stringify(enabled))
+    const plugins = await rpc('listPlugins')
+    for (const row of (await rpc('listBundles')).find(row => row.name === name).rows) {
+      const plugin = plugins.find(plugin => plugin.entryId !== undefined && plugin.entryId === row.entryId)
+      assert.equal(plugin?.fiberPhase, 'active', `${name} row ${row.rowId}: ${JSON.stringify(plugin)}`)
+    }
+    const disabled = await rpc('setBundleEnabled', { name, enabled: false })
+    assert.equal(disabled.application, 'applied', JSON.stringify(disabled))
+    console.log(`verify-host: optional bundle ${name} started its ${String(bundle.rows.length)} rows`)
+  }
   const packages = ['dsh-community-market', 'dshmarket', '@agents-anywhere/dsh-bridge-next']
   for (const name of packages) {
     const bundle = (await rpc('listBundles')).find(row => row.name === name)
